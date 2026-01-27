@@ -1,7 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ScheduleItem } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAI = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) {
+    throw new Error("API Key not configured"); // Will be caught by try/catch in functions
+  }
+  const ai = new GoogleGenAI({ apiKey });
+  return ai;
+};
 
 const modelName = 'gemini-3-flash-preview';
 
@@ -40,7 +47,7 @@ export const generateStudySchedule = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: modelName,
       contents: prompt,
       config: {
@@ -90,7 +97,7 @@ export const generateMinistryTips = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: modelName,
       contents: prompt,
     });
@@ -122,7 +129,7 @@ export const generateBibleHighlights = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: modelName,
       contents: prompt,
     });
@@ -158,7 +165,7 @@ export const generateCommentSuggestion = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: modelName,
       contents: prompt,
     });
@@ -236,7 +243,7 @@ export const analyzeDiscourse = async (
       contents = `Transforme a seguinte transcrição/anotação em um Material de Ensino Definitivo para o NotebookLM, seguindo as diretrizes de autoridade e referências em negrito:\n\n${input}`;
     }
 
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: modelName,
       contents: contents,
       config: {
@@ -282,7 +289,7 @@ export const generateDeepStudyQuestions = async (
   `;
 
   try {
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: modelName,
       contents: `Gere perguntas de estudo profundo para o seguinte texto:\n\n${studyText}`,
       config: {
