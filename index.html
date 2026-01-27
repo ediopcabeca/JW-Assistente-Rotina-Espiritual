@@ -45,10 +45,22 @@
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
-  <div
-    style="background-color: #ffff00; color: #000; padding: 20px; text-align: center; font-weight: bold; font-size: 24px; border-bottom: 5px solid red; z-index: 999999; position: relative;">
-    VERSÃO DO HTML ATUALIZADA (SEM REACT)
+  <div id="global-error-display"
+    style="display:none; position: fixed; top: 0; left: 0; width: 100%; background: #990000; color: white; padding: 20px; z-index: 999999; overflow: auto; max-height: 50vh; font-family: monospace;">
+    <strong>ERRO CRÍTICO DETECTADO:</strong>
+    <pre id="error-message"></pre>
   </div>
+  <script>
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+      document.getElementById('global-error-display').style.display = 'block';
+      document.getElementById('error-message').textContent += `\nMsg: ${msg}\nLine: ${lineNo}:${columnNo}\nStack: ${error ? error.stack : 'N/A'}`;
+      return false;
+    };
+    window.onunhandledrejection = function (event) {
+      document.getElementById('global-error-display').style.display = 'block';
+      document.getElementById('error-message').textContent += `\nUnhandled Promise: ${event.reason}`;
+    };
+  </script>
   <div id="root"></div>
   <script>
     // Service Worker removed to force update
