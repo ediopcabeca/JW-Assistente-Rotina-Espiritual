@@ -95,9 +95,7 @@ const App: React.FC = () => {
   if (!currentUser) {
     return (
       <div className={darkMode ? 'dark' : ''}>
-        <div style={{ color: 'white', backgroundColor: 'red', padding: '20px', zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100%' }}>
-          TESTE VISÍVEL - LOGIN SCREEN
-        </div>
+
         <div className="absolute top-4 right-4 z-50">
           <button
             onClick={toggleTheme}
@@ -194,8 +192,8 @@ const App: React.FC = () => {
         setIsMobileMenuOpen(false);
       }}
       className={`flex items-center space-x-3 px-4 py-3 w-full rounded-lg transition-colors ${currentView === view
-          ? 'bg-blue-600 text-white shadow-md'
-          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+        ? 'bg-blue-600 text-white shadow-md'
+        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
         }`}
     >
       {icon}
@@ -205,9 +203,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <div style={{ color: 'white', backgroundColor: 'blue', padding: '20px', zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100%' }}>
-        TESTE VISÍVEL - MAIN APP
-      </div>
+
 
       {/* Theme Toggle Button (Desktop Only) */}
       <button
