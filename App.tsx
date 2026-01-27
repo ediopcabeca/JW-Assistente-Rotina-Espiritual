@@ -7,10 +7,10 @@ import TranscriptionHelper from './components/TranscriptionHelper';
 import StudyQuestionsHelper from './components/StudyQuestionsHelper';
 import LoginScreen from './components/LoginScreen';
 import { getReadingForToday } from './services/bibleData';
-import { 
-  LayoutDashboard, 
-  CalendarDays, 
-  Briefcase, 
+import {
+  LayoutDashboard,
+  CalendarDays,
+  Briefcase,
   Book,
   Menu,
   X,
@@ -36,7 +36,7 @@ const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
   const [readingData, setReadingData] = useState({ text: '', planDay: 0 });
-  
+
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme');
@@ -95,15 +95,18 @@ const App: React.FC = () => {
   if (!currentUser) {
     return (
       <div className={darkMode ? 'dark' : ''}>
-         <div className="absolute top-4 right-4 z-50">
-           <button 
-             onClick={toggleTheme}
-             className="p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-yellow-400"
-           >
-             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-           </button>
-         </div>
-         <LoginScreen onLogin={handleLogin} />
+        <div style={{ color: 'white', backgroundColor: 'red', padding: '20px', zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100%' }}>
+          TESTE VISÍVEL - LOGIN SCREEN
+        </div>
+        <div className="absolute top-4 right-4 z-50">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-yellow-400"
+          >
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+        </div>
+        <LoginScreen onLogin={handleLogin} />
       </div>
     );
   }
@@ -132,29 +135,29 @@ const App: React.FC = () => {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <DashboardCard 
-                title="Planejar Semana" 
+              <DashboardCard
+                title="Planejar Semana"
                 description="Crie um cronograma de estudo adaptado ao seu tempo."
                 icon={<CalendarDays size={32} className="text-blue-600 dark:text-blue-400" />}
                 color="bg-blue-50 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 dark:border-blue-800"
                 onClick={() => setCurrentView(AppView.SCHEDULE)}
               />
-              <DashboardCard 
-                title="Estudo Profundo" 
+              <DashboardCard
+                title="Estudo Profundo"
                 description="Gere perguntas parágrafo por parágrafo para publicações."
                 icon={<BrainCircuit size={32} className="text-purple-600 dark:text-purple-400" />}
                 color="bg-purple-50 hover:bg-purple-100 border-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:border-purple-800"
                 onClick={() => setCurrentView(AppView.STUDY_QUESTIONS)}
               />
-              <DashboardCard 
-                title="Ministério de Campo" 
+              <DashboardCard
+                title="Ministério de Campo"
                 description="Ideias para revisitas e explicações bíblicas."
                 icon={<Briefcase size={32} className="text-orange-600 dark:text-orange-400" />}
                 color="bg-orange-50 hover:bg-orange-100 border-orange-200 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 dark:border-orange-800"
                 onClick={() => setCurrentView(AppView.MINISTRY)}
               />
-              <DashboardCard 
-                title="Leitura da Bíblia" 
+              <DashboardCard
+                title="Leitura da Bíblia"
                 description={
                   <span className="flex flex-col gap-1">
                     <span>Pontos de meditação e pérolas.</span>
@@ -170,8 +173,8 @@ const App: React.FC = () => {
                 color="bg-indigo-50 hover:bg-indigo-100 border-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 dark:border-indigo-800"
                 onClick={() => setCurrentView(AppView.BIBLE)}
               />
-              <DashboardCard 
-                title="NotebookLM Prep" 
+              <DashboardCard
+                title="NotebookLM Prep"
                 description="Transcreva e formate discursos para estudo."
                 icon={<FileText size={32} className="text-emerald-600 dark:text-emerald-400" />}
                 color="bg-emerald-50 hover:bg-emerald-100 border-emerald-200 shadow-sm ring-1 ring-emerald-300 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 dark:border-emerald-800 dark:ring-emerald-700"
@@ -190,11 +193,10 @@ const App: React.FC = () => {
         setCurrentView(view);
         setIsMobileMenuOpen(false);
       }}
-      className={`flex items-center space-x-3 px-4 py-3 w-full rounded-lg transition-colors ${
-        currentView === view 
-          ? 'bg-blue-600 text-white shadow-md' 
+      className={`flex items-center space-x-3 px-4 py-3 w-full rounded-lg transition-colors ${currentView === view
+          ? 'bg-blue-600 text-white shadow-md'
           : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-      }`}
+        }`}
     >
       {icon}
       <span className="font-medium whitespace-nowrap">{label}</span>
@@ -203,9 +205,12 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      
+      <div style={{ color: 'white', backgroundColor: 'blue', padding: '20px', zIndex: 9999, position: 'fixed', top: 0, left: 0, width: '100%' }}>
+        TESTE VISÍVEL - MAIN APP
+      </div>
+
       {/* Theme Toggle Button (Desktop Only) */}
-      <button 
+      <button
         onClick={toggleTheme}
         className="hidden md:block fixed top-4 right-4 z-50 p-2 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-yellow-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
         aria-label="Alternar tema"
@@ -216,23 +221,23 @@ const App: React.FC = () => {
       {/* Mobile Header */}
       <div className="md:hidden bg-white dark:bg-gray-900 p-4 flex justify-between items-center shadow-sm z-20 relative border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2">
-           {/* Standardized Logo for Mobile */}
-           <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">JW</span>
-           <span className="font-bold text-gray-800 dark:text-white text-lg">Assistente</span>
+          {/* Standardized Logo for Mobile */}
+          <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">JW</span>
+          <span className="font-bold text-gray-800 dark:text-white text-lg">Assistente</span>
         </div>
         <div className="flex items-center gap-3">
           {/* Mobile Theme Toggle */}
-          <button 
-             onClick={toggleTheme}
-             className="p-2 text-gray-600 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-             title="Alternar Tema"
+          <button
+            onClick={toggleTheme}
+            className="p-2 text-gray-600 dark:text-yellow-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+            title="Alternar Tema"
           >
-             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          
+
           {/* Add Logout here for mobile accessibility */}
-          <button 
-            onClick={handleLogout} 
+          <button
+            onClick={handleLogout}
             className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
             title="Sair"
           >
@@ -264,15 +269,15 @@ const App: React.FC = () => {
               </div>
             </div>
             {/* Close button for mobile within drawer */}
-            <button 
-              onClick={() => setIsMobileMenuOpen(false)} 
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
               className="md:hidden p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
             >
               <X size={24} />
             </button>
             {/* Desktop Close Button */}
-            <button 
-              onClick={() => setIsDesktopSidebarOpen(false)} 
+            <button
+              onClick={() => setIsDesktopSidebarOpen(false)}
               className="hidden md:block p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
               title="Recolher Menu"
             >
@@ -288,16 +293,16 @@ const App: React.FC = () => {
             <NavItem view={AppView.TRANSCRIPTION} label="NotebookLM Prep" icon={<FileText size={20} />} />
           </nav>
         </div>
-        
+
         <div className="w-64 p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
-           <button 
-             onClick={handleLogout}
-             className="w-full flex items-center justify-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors text-sm font-medium mb-4"
-           >
-             <LogOut size={16} /> Sair da Conta
-           </button>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors text-sm font-medium mb-4"
+          >
+            <LogOut size={16} /> Sair da Conta
+          </button>
           <p className="text-xs text-center text-gray-400 dark:text-gray-500">
-            Ferramenta de auxílio pessoal.<br/>Sempre consulte as publicações oficiais.
+            Ferramenta de auxílio pessoal.<br />Sempre consulte as publicações oficiais.
           </p>
         </div>
       </aside>
@@ -306,20 +311,20 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto h-[calc(100vh-64px)] md:h-screen p-4 md:p-8 relative">
         {/* Desktop Sidebar Toggle (Open) */}
         {!isDesktopSidebarOpen && (
-           <button 
-              onClick={() => setIsDesktopSidebarOpen(true)}
-              className="hidden md:flex absolute top-4 left-4 z-20 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-blue-600"
-              title="Expandir Menu"
-           >
-              <PanelLeft size={24} />
-           </button>
+          <button
+            onClick={() => setIsDesktopSidebarOpen(true)}
+            className="hidden md:flex absolute top-4 left-4 z-20 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-blue-600"
+            title="Expandir Menu"
+          >
+            <PanelLeft size={24} />
+          </button>
         )}
         {renderView()}
       </main>
 
       {/* Overlay for mobile */}
       {isMobileMenuOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -329,7 +334,7 @@ const App: React.FC = () => {
 };
 
 const DashboardCard = ({ title, description, icon, color, onClick, className }: any) => (
-  <div 
+  <div
     onClick={onClick}
     className={`p-6 rounded-xl border transition-all duration-200 transform hover:-translate-y-1 hover:shadow-lg cursor-pointer flex items-start gap-4 ${color} ${className || ''}`}
   >
