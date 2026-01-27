@@ -1,16 +1,23 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { ScheduleItem } from "../types";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-const getAI = () => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key not configured"); // Will be caught by try/catch in functions
+const callAIProxy = async (payload: any): Promise<string> => {
+  const response = await fetch(`${API_BASE_URL}/api/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Erro no servidor: ${response.status}`);
   }
-  const ai = new GoogleGenAI({ apiKey });
-  return ai;
-};
 
-const modelName = 'gemini-3-flash-preview';
+  const data = await response.json();
+  return data.reply;
+};
 
 export const generateStudySchedule = async (
   profile: string,
@@ -47,28 +54,24 @@ export const generateStudySchedule = async (
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: modelName,
+    const text = await callAIProxy({
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
-          type: Type.ARRAY,
+          type: "array", // Simplified for proxy but backend SDK will handle it
           items: {
-            type: Type.OBJECT,
+            type: "object",
             properties: {
-              day: { type: Type.STRING, description: "Nome do dia (ex: Segunda-feira)" },
-              activity: { type: Type.STRING, description: "Título principal da atividade" },
-              focus: { type: Type.STRING, description: "Ação prática e específica" },
+              day: { type: "string" },
+              activity: { type: "string" },
+              focus: { type: "string" },
             },
             required: ["day", "activity", "focus"],
           },
         },
       },
     });
-
-    const text = response.text;
-    if (!text) return [];
     return JSON.parse(text) as ScheduleItem[];
   } catch (error) {
     console.error("Error generating schedule:", error);
@@ -97,11 +100,8 @@ export const generateMinistryTips = async (
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: modelName,
-      contents: prompt,
-    });
-    return response.text || "Não foi possível gerar dicas.";
+    const text = await callAIProxy({ prompt });
+    return text || "Não foi possível gerar dicas.";
   } catch (error) {
     console.error("Error generating ministry tips:", error);
     return "Erro ao conectar com o assistente.";
@@ -129,11 +129,8 @@ export const generateBibleHighlights = async (
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: modelName,
-      contents: prompt,
-    });
-    return response.text || "Não foi possível gerar pontos de meditação.";
+    const text = await callAIProxy({ prompt });
+    return text || "Não foi possível gerar pontos de meditação.";
   } catch (error) {
     console.error("Error generating bible highlights:", error);
     return "Erro ao conectar com o assistente.";
@@ -165,11 +162,8 @@ export const generateCommentSuggestion = async (
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: modelName,
-      contents: prompt,
-    });
-    return response.text || "Não foi possível gerar sugestão.";
+    const text = await callAIProxy({ prompt });
+    return text || "Não foi possível gerar sugestão.";
   } catch (error) {
     console.error("Error generating comment suggestion:", error);
     return "Erro ao conectar com o assistente.";
@@ -243,15 +237,14 @@ export const analyzeDiscourse = async (
       contents = `Transforme a seguinte transcrição/anotação em um Material de Ensino Definitivo para o NotebookLM, seguindo as diretrizes de autoridade e referências em negrito:\n\n${input}`;
     }
 
-    const response = await getAI().models.generateContent({
-      model: modelName,
+    const text = await callAIProxy({
       contents: contents,
       config: {
         systemInstruction: systemInstruction
       }
     });
 
-    return response.text || "Não foi possível processar o discurso.";
+    return text || "Não foi possível processar o discurso.";
   } catch (error) {
     console.error("Error analyzing discourse:", error);
     return "Erro ao processar o conteúdo. Verifique se o áudio não é muito longo ou tente novamente.";
@@ -289,15 +282,14 @@ export const generateDeepStudyQuestions = async (
   `;
 
   try {
-    const response = await getAI().models.generateContent({
-      model: modelName,
+    const text = await callAIProxy({
       contents: `Gere perguntas de estudo profundo para o seguinte texto:\n\n${studyText}`,
       config: {
         systemInstruction: systemInstruction
       }
     });
 
-    return response.text || "Não foi possível gerar as perguntas de estudo.";
+    return text || "Não foi possível gerar as perguntas de estudo.";
   } catch (error) {
     console.error("Error generating study questions:", error);
     return "Erro ao analisar o texto.";
