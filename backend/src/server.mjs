@@ -77,11 +77,18 @@ app.post("/api/chat", async (req, res) => {
 // Inicia servidor
 const start = async () => {
     console.log("[SERVER] Iniciando processo...");
-    await initDB();
 
-    app.listen(PORT, () => {
+    // Iniciamos o listen primeiro para a Hostinger detectar que o app subiu
+    app.listen(PORT, async () => {
         console.log(`[SERVER] Rodando na porta ${PORT}`);
         console.log(`[SERVER] Frontend autorizado: ${FRONTEND_ORIGIN}`);
+
+        // Tenta inicializar o banco em background após o servidor estar online
+        try {
+            await initDB();
+        } catch (dbErr) {
+            console.error("[SERVER] Erro crítico ao chamar initDB:", dbErr.message);
+        }
     });
 };
 
