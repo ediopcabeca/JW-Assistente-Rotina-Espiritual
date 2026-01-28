@@ -12,43 +12,61 @@ if (!$userData) {
 $userId = $userData['id'];
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Função auxiliar para verificar se um capítulo está dentro de uma string de capítulos complexa
+function isChapterInRange($requested, $stored)
+{
+    // Ex: requested = "Gênesis 31", stored = "Gênesis 30-32; Gênesis 34"
+    if ($requested === $stored)
+        return true;
+
+    if (!preg_match('/^(.+)\s(\d+)$/', $requested, $m))
+        return false;
+    $bookReq = $m[1];
+    $numReq = (int) $m[2];
+
+    // Se o livro não está na string armazenada, nem adianta continuar
+    if (stripos($stored, $bookReq) === false)
+        return false;
+
+    // Normaliza a string armazenada para processar os números
+    // Remove o nome do livro e separa por delimitadores comuns
+    $numbersPart = str_ireplace($bookReq, '', $stored);
+    $parts = preg_split('/[;,]/', $numbersPart);
+
+    foreach ($parts as $part) {
+        $part = trim($part);
+        if (preg_match('/^(\d+)-(\d+)$/', $part, $range)) {
+            if ($numReq >= (int) $range[1] && $numReq <= (int) $range[2])
+                return true;
+        } elseif (preg_match('/^(\d+)$/', $part, $single)) {
+            if ($numReq === (int) $single[1])
+                return true;
+        }
+    }
+
+    return false;
+}
+
 switch ($method) {
     case 'GET':
         $chapters = $_GET['chapters'] ?? null;
         if ($chapters) {
-            // 1. Busca exata (ex: "Gênesis 1-3")
+            // 1. Busca exata (Rápido)
             $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? AND chapters = ? ORDER BY created_at DESC LIMIT 1");
             $stmt->execute([$userId, $chapters]);
             $highlight = $stmt->fetch();
 
             if (!$highlight) {
                 // 2. Busca aproximada (Archive)
-                // Se o usuário procurou por "Gênesis 31", mas salvamos como "Gênesis 30-32"
+                // Pega os últimos resumos do usuário e testa um a um (o parser é complexo para SQL puro)
+                $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? ORDER BY created_at DESC LIMIT 50");
+                $stmt->execute([$userId]);
+                $rows = $stmt->fetchAll();
 
-                // Primeiro tenta um LIKE simples
-                $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? AND chapters LIKE ? ORDER BY created_at DESC LIMIT 1");
-                $stmt->execute([$userId, "%$chapters%"]);
-                $highlight = $stmt->fetch();
-
-                if (!$highlight && preg_match('/^(.+)\s(\d+)$/', $chapters, $matches)) {
-                    $bookRequested = $matches[1];
-                    $numRequested = (int) $matches[2];
-
-                    // Busca todos os registros desse livro para este usuário
-                    $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? AND chapters LIKE ? ORDER BY created_at DESC");
-                    $stmt->execute([$userId, "$bookRequested%"]);
-                    $potentialMatches = $stmt->fetchAll();
-
-                    foreach ($potentialMatches as $row) {
-                        // Verifica se o padrão é "Livro Inicio-Fim"
-                        if (preg_match('/^' . preg_quote($bookRequested) . '\s(\d+)-(\d+)$/', $row['chapters'], $rMatches)) {
-                            $start = (int) $rMatches[1];
-                            $end = (int) $rMatches[2];
-                            if ($numRequested >= $start && $numRequested <= $end) {
-                                $highlight = $row;
-                                break;
-                            }
-                        }
+                foreach ($rows as $row) {
+                    if (isChapterInRange($chapters, $row['chapters'])) {
+                        $highlight = $row;
+                        break;
                     }
                 }
             }

@@ -78,16 +78,25 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
   };
 
   useEffect(() => {
-    refreshState();
-    setHighlights('');
-    setCachedAudio(null);
-    setSelectedBook(null);
+    const init = async () => {
+      // 1. Tenta puxar dados do servidor antes de mostrar qualquer coisa
+      if (syncAdapter.isAvailable()) {
+        await syncAdapter.pullUserData();
+      }
 
-    // Busca pérola persistente para a leitura de hoje
-    const reading = getReadingForToday(userId);
-    if (reading.text) {
-      fetchHighlight(reading.text);
-    }
+      refreshState();
+      setHighlights('');
+      setCachedAudio(null);
+      setSelectedBook(null);
+
+      // 2. Busca pérola persistente para a leitura de hoje
+      const reading = getReadingForToday(userId);
+      if (reading.text) {
+        fetchHighlight(reading.text);
+      }
+    };
+
+    init();
   }, [userId]);
 
   const handleGenerate = async (chaptersToUse: string) => {
@@ -333,15 +342,28 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
               <div className="flex items-center justify-between mb-4"><h4 className="text-lg font-bold text-gray-900 dark:text-white">{selectedBook}</h4></div>
               <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
                 {Array.from({ length: BIBLE_BOOKS.find(b => b.name === selectedBook)?.chapters || 0 }, (_, i) => i + 1).map(num => {
-                  const isRead = readChapters.includes(`${selectedBook} ${num}`);
+                  const chapterId = `${selectedBook} ${num}`;
+                  const isRead = readChapters.includes(chapterId);
                   return (
-                    <button key={num} onClick={() => {
-                      toggleSingleChapter(selectedBook, num);
-                      // Ao clicar em um capítulo específico, tenta buscar a pérola se existir (Archive)
-                      fetchHighlight(`${selectedBook} ${num}`, true);
-                    }} className={`h-10 w-full rounded-lg font-bold text-sm transition-all ${isRead ? 'bg-green-500 text-white' : 'bg-white dark:bg-gray-800 border border-gray-200 text-gray-600 dark:text-gray-400'}`}>
-                      {num}
-                    </button>
+                    <div key={num} className="relative group">
+                      <button
+                        onClick={() => fetchHighlight(chapterId, true)}
+                        className={`h-10 w-full rounded-lg font-bold text-sm transition-all border ${isRead ? 'bg-green-500 text-white border-green-600' : 'bg-white dark:bg-gray-800 border-gray-200 text-gray-600 dark:text-gray-400'}`}
+                        title="Ver resumo/pérolas"
+                      >
+                        {num}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSingleChapter(selectedBook, num);
+                        }}
+                        className={`absolute -top-1 -right-1 w-4 h-4 rounded-full border flex items-center justify-center transition-colors shadow-sm ${isRead ? 'bg-white text-green-600 border-green-200' : 'bg-gray-100 text-gray-400 border-gray-300'} hover:scale-110`}
+                        title={isRead ? "Marcar como não lido" : "Marcar como lido"}
+                      >
+                        {isRead ? <CheckSquare size={10} /> : <Square size={10} />}
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -349,7 +371,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
           )}
         </div>
       </div>
-    </div >
+    </div>
   );
 };
 
