@@ -5,6 +5,13 @@ import { model } from "./config/gemini.js";
 import { initDB } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import syncRoutes from "./routes/sync.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, "../../"); // from backend/src/ to root
+const distPath = path.join(rootDir, "dist");
 
 dotenv.config();
 
@@ -37,16 +44,15 @@ app.use(
     })
 );
 
+// Statics
+app.use(express.static(distPath));
+
 // Rotas de Autenticação e Sincronização
 app.use("/api/auth", authRoutes);
 app.use("/api/sync", syncRoutes);
 
 app.get("/health", (req, res) => {
     res.json({ status: "ok", message: "Servidor online", timestamp: new Date() });
-});
-
-app.get("/", (req, res) => {
-    res.send("<h1>Assistente Espiritual Backend</h1><p>O servidor está rodando com suporte a Sincronização MySQL.</p>");
 });
 
 app.post("/api/chat", async (req, res) => {
@@ -61,6 +67,14 @@ app.post("/api/chat", async (req, res) => {
         console.error("Erro no backend:", error);
         return res.status(500).json({ error: "Erro na IA.", message: error.message });
     }
+});
+
+// SPA Fallback (Deve ser a última rota)
+app.get("*", (req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API route not found' });
+    }
+    res.sendFile(path.join(distPath, "index.html"));
 });
 
 const start = async () => {
