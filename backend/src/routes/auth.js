@@ -1,17 +1,12 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { OAuth2Client } from 'google-auth-library';
+// Google Auth removido para simplificação
 import { pool } from '../config/db.js';
 
 const router = express.Router();
 console.log("[INÍCIO] Carregando Rotas de Autenticação...");
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-if (process.env.GOOGLE_CLIENT_ID) {
-    console.log("[INFO] Google Client ID carregado.");
-} else {
-    console.error("[ERRO] Google Client ID ausente!");
-}
+// Google Client ID check removido
 
 // Middleware para validar senha: 6-8 caracteres, alfanumérico
 const validatePassword = (password) => {
@@ -84,43 +79,6 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Login com Google
-router.post('/google', async (req, res) => {
-    const { token } = req.body;
-
-    try {
-        const ticket = await googleClient.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-
-        const { email, sub: googleId } = ticket.getPayload();
-        const normalizedEmail = email.toLowerCase();
-
-        const [users] = await pool.execute('SELECT * FROM users WHERE email = ? OR google_id = ?', [normalizedEmail, googleId]);
-
-        let user;
-        if (users.length === 0) {
-            // Criar novo usuário via Google
-            const [result] = await pool.execute(
-                'INSERT INTO users (email, google_id) VALUES (?, ?)',
-                [normalizedEmail, googleId]
-            );
-            user = { id: result.insertId, email: normalizedEmail };
-        } else {
-            user = users[0];
-            // Atualizar google_id se necessário (caso o usuário tenha criado conta com email antes)
-            if (!user.google_id) {
-                await pool.execute('UPDATE users SET google_id = ? WHERE id = ?', [googleId, user.id]);
-            }
-        }
-
-        const sessionToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token: sessionToken, user: { id: user.id, email: user.email } });
-    } catch (error) {
-        console.error('Erro Google Auth:', error);
-        res.status(500).json({ error: 'Erro ao autenticar com Google.' });
-    }
-});
+// Rota /google removida
 
 export default router;

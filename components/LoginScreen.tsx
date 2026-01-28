@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Lock, ArrowRight, Loader2, UserPlus, LogIn, Eye, EyeOff, Users, X } from 'lucide-react';
-import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
+// Google Login removido para simplificação (Uso pessoal)
 
 interface LoginScreenProps {
   onLogin: (userId: string, token?: string) => void;
@@ -15,8 +15,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [savedUsers, setSavedUsers] = useState<string[]>([]);
 
-  // Client ID do Google Cloud Console retirado do painel Hostinger
-  const GOOGLE_CLIENT_ID = "172285702411-fpdidnlddbdr177gc7j8iok6j56ufges.apps.googleusercontent.com";
+  // Google Client ID removido
 
   useEffect(() => {
     try {
@@ -92,31 +91,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    setLoading(true);
-    setError('');
-    try {
-      const apiHost = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-      const response = await fetch(`${apiHost}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: credentialResponse.credential })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro no login com Google');
-      }
-
-      onLogin(data.user.email, data.token);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Falha no login com Google.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // handleGoogleSuccess removido
 
   const handleSelectUser = (user: string) => {
     setEmail(user);
@@ -204,23 +179,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-col items-center gap-4 mb-2">
-                <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => setError('Falha no login com Google')}
-                    theme="filled_blue"
-                    shape="pill"
-                    text="continue_with"
-                    width="100%"
-                  />
-                </GoogleOAuthProvider>
-              </div>
+              {/* Login do Google removido */}
 
-              <div className="flex items-center gap-4 my-2">
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
-                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">ou use seu email</span>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700"></div>
+              <div className="text-center mb-4">
+                <span className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Acesse com seu email</span>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">

@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
 
 // Verificação de Variáveis de Ambiente Críticas
-const REQUIRED_ENV = ['GOOGLE_CLIENT_ID', 'JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+const REQUIRED_ENV = ['JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
 console.log("--- Verificando Configurações ---");
 REQUIRED_ENV.forEach(env => {
     if (!process.env[env]) {
