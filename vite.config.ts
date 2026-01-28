@@ -13,7 +13,8 @@ export default defineConfig(({ mode }) => {
       viteStaticCopy({
         targets: [
           { src: 'manifest.json', dest: '.' },
-          { src: 'sw.js', dest: '.' }
+          { src: 'sw.js', dest: '.' },
+          { src: 'icon.png', dest: '.' }
         ]
       })
     ],
