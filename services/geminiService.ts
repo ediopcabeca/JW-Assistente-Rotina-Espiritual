@@ -92,6 +92,7 @@ export const generateMinistryTips = async (
     3. Uma pergunta para deixar em aberto para a próxima visita.
     
     Use formatação Markdown clara.
+    Escreva de forma direta e instrutiva. Não use frases como "sob a perspectiva das Testemunhas de Jeová" ou similar, pois o contexto já é implícito.
 
     DIRETRIZES DE IDIOMA (CRÍTICO):
     - Responda em Português Brasileiro (pt-BR) com acentuação correta.
@@ -130,6 +131,7 @@ export const generateIllustration = async (
     2. Use elementos do cotidiano que a assistência identificará (conforme o perfil).
     3. A ilustração deve ser breve, mas poderosa.
     4. Explique a aplicação da ilustração de forma clara no final.
+    5. Não mencione "na perspectiva das Testemunhas de Jeová", seja direto no ensino.
     
     ESTRUTURA DO OUTPUT (MARKDOWN):
     ### 📖 Ilustração Principal
@@ -178,6 +180,7 @@ export const generateDiscoursePreparation = async (
     - O texto deve ser natural, conversacional e caber EXATAMENTE no tempo de ${time} minutos (ritmo médio de 130 palavras por minuto).
     - Inclua as leituras dos textos bíblicos e as aplicações das ilustrações solicitadas.
     - Use tom de autoridade, mas amoroso e instrutivo.
+    - IMPORTANTE: Não use a expressão "sob a perspectiva das Testemunhas de Jeová" ou similares. Fale diretamente para a assistência como um instrutor qualificado.
 
     RESULTADO 2: "ESBOÇO DE LEMBRETE (TRIBUNA)"
     - Crie um resumo visualmente limpo com apenas palavras-chave e pontos de destaque.
@@ -220,16 +223,15 @@ export const generateBibleHighlights = async (
   chapters: string
 ): Promise<string> => {
   const prompt = `
-    O usuário está seguindo um cronograma de leitura da Bíblia.
+    Você é um instrutor experiente da Bíblia que fornece insights espirituais profundos e encorajadores.
     A leitura de hoje é: "${chapters}".
     
-    Analise os capítulos da leitura de hoje sob a perspectiva das Testemunhas de Jeová. 
-    Foque em:
-    1. **Qualidades de Jeová:** O que o relato ensina sobre amor, justiça, poder ou sabedoria de Deus?
-    2. **Lições Morais Práticas:** Princípios para o dia a dia.
-    3. **Reino de Deus:** Como os textos apontam ou fortalecem a fé no Reino?
+    Analise os capítulos de hoje fornecendo pontos para meditação:
+    1. **Qualidades de Jeová:** O que o relato ensina sobre o amor, justiça, poder ou sabedoria de Deus?
+    2. **Lições Práticas:** Como esses princípios se aplicam ao nosso dia a dia?
+    3. **O Reino de Deus:** De que forma os textos fortalecem nossa confiança no Reino?
     
-    Use linguagem respeitosa, instrutiva e encorajadora.
+    Escreva de forma direta e afirmativa, como se estivéssemos estudando juntos. Evite frases como "sob a perspectiva de" ou "para as Testemunhas de Jeová", pois o foco deve ser o ensino bíblico puro.
     
     DIRETRIZES DE IDIOMA (CRÍTICO):
     - Responda em Português Brasileiro (pt-BR) com acentuação correta.
@@ -251,8 +253,8 @@ export const generateCommentSuggestion = async (
   scripture: string
 ): Promise<string> => {
   const prompt = `
-    Atue como um assistente para preparação de reuniões das Testemunhas de Jeová.
-    O objetivo é criar um comentário breve, edificante e direto para a reunião (Estudo de A Sentinela ou Estudo Bíblico de Congregação).
+    Atue como um assistente para preparação de reuniões congregacionais.
+    Crie um comentário breve, edificante e direto.
     
     Contexto do parágrafo: "${context}"
     Pergunta do parágrafo: "${question}"
@@ -260,9 +262,9 @@ export const generateCommentSuggestion = async (
     
     Diretrizes:
     1. A resposta deve ser curta (máximo 30 segundos de fala).
-    2. Deve responder diretamente à pergunta.
-    3. Use linguagem simples e conversacional.
-    4. Se houver texto bíblico, inclua uma breve aplicação dele.
+    2. Responda diretamente à pergunta usando "Nós" (ex: "Aprendemos que...").
+    3. Se houver texto bíblico, integre a aplicação de forma natural.
+    4. Não mencione "perspectiva das Testemunhas de Jeová", foque na resposta direta.
     
     DIRETRIZES DE IDIOMA (CRÍTICO):
     - Responda em Português Brasileiro (pt-BR).
