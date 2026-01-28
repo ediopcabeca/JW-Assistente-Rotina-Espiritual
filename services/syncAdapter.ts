@@ -50,11 +50,10 @@ export const syncAdapter = {
      */
     pushUserData: async () => {
         const token = localStorage.getItem('jw_auth_token');
-        if (!token) return false;
+        if (!token) throw new Error('NO_TOKEN');
 
         try {
             const allLocalData = {};
-            // Coleta todas as chaves 'jw_' do LocalStorage
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 if (key && key.startsWith('jw_') && !key.includes('test') && !key.includes('auth_token')) {
@@ -71,13 +70,17 @@ export const syncAdapter = {
                 body: JSON.stringify({ sync_data: allLocalData })
             });
 
-            if (!response.ok) throw new Error('Falha ao enviar dados');
+            if (response.status === 401 || response.status === 403) {
+                throw new Error('AUTH_ERROR');
+            }
+
+            if (!response.ok) throw new Error('SERVER_ERROR');
 
             console.log('[SYNC] Backup realizado no servidor.');
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error('[SYNC] Erro ao enviar backup:', error);
-            return false;
+            throw error;
         }
     },
 

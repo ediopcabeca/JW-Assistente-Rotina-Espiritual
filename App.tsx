@@ -329,13 +329,23 @@ const App: React.FC = () => {
         <div className="w-64 p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
           <button
             onClick={async () => {
-              const ok = await syncAdapter.pushUserData();
-              if (ok) alert('Dados sincronizados com sucesso!');
-              else alert('Erro ao sincronizar. Verifique sua conexão.');
+              try {
+                const ok = await syncAdapter.pushUserData();
+                if (ok) alert('✅ Dados sincronizados com sucesso!');
+              } catch (err: any) {
+                if (err.message === 'NO_TOKEN') {
+                  alert('💡 Para sincronizar, você precisa sair e entrar novamente usando o botão "Criar Conta" para registrar seu e-mail no servidor.');
+                } else if (err.message === 'AUTH_ERROR') {
+                  alert('⚠️ Sua sessão expirou. Por favor, saia e entre novamente.');
+                } else {
+                  alert('❌ Erro de conexão com o servidor. Verifique sua internet ou as configurações do banco de dados na Hostinger.');
+                }
+              }
             }}
             className="w-full flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 rounded-lg transition-colors text-sm font-medium mb-2"
           >
-            <Sun size={16} className="animate-pulse" /> Sincronizar Agora
+            <Sun size={16} className={syncAdapter.isAvailable() ? "animate-pulse" : ""} />
+            {syncAdapter.isAvailable() ? 'Sincronizar Agora' : 'Ativar Sincronização'}
           </button>
           <button
             onClick={handleLogout}
