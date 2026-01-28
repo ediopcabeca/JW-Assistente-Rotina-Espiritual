@@ -49,7 +49,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
 
   const fetchHighlight = async (chaptersToUse: string, forceShow: boolean = false) => {
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('jw_auth_token');
       if (!token) return;
 
       const res = await fetch(`/api/highlights.php?chapters=${encodeURIComponent(chaptersToUse)}`, {
@@ -78,6 +78,8 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
   };
 
   useEffect(() => {
+    let interval: any;
+
     const init = async () => {
       // 1. Tenta puxar dados do servidor antes de mostrar qualquer coisa
       if (syncAdapter.isAvailable()) {
@@ -94,9 +96,20 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
       if (reading.text) {
         fetchHighlight(reading.text);
       }
+
+      // 3. Configura pull periódico (a cada 30 segundos)
+      interval = setInterval(async () => {
+        if (syncAdapter.isAvailable()) {
+          const changed = await syncAdapter.pullUserData();
+          if (changed) {
+            refreshState();
+          }
+        }
+      }, 30000);
     };
 
     init();
+    return () => clearInterval(interval);
   }, [userId]);
 
   const handleGenerate = async (chaptersToUse: string) => {
@@ -107,7 +120,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
       setHighlights(result);
 
       // Salva no Backend para sincronizar
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('jw_auth_token');
       if (token) {
         const res = await fetch('/api/highlights.php', {
           method: 'POST',
@@ -130,7 +143,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
   const handleMarkHighlightRead = async () => {
     if (!highlightId) return;
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('jw_auth_token');
       if (!token) return;
 
       await fetch('/api/highlights.php', {
