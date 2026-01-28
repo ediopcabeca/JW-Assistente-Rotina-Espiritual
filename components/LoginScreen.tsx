@@ -49,36 +49,43 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
 
     try {
-      const apiHost = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+      const apiHost = window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin;
       const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
+      const url = `${apiHost}${endpoint}`;
 
-      const response = await fetch(`${apiHost}${endpoint}`, {
+      console.log(`[AUTH] Chamando: ${url}`);
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: email.trim().toLowerCase(),
-          password: password.trim().toLowerCase() // Normalizamos para evitar erros de case
+          password: password.trim().toLowerCase()
         })
       });
 
-      const data = await response.json();
+      // Se não for JSON, o .json() vai falhar com "Unexpected token <"
+      // Vamos capturar o texto primeiro para debug se falhar
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Erro na autenticação');
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro na autenticação');
-      }
-
-      if (isRegistering) {
-        setIsRegistering(false);
-        setError('Conta criada com sucesso! Faça login agora.');
-        setEmail(email.trim().toLowerCase());
-        setPassword('');
+        if (isRegistering) {
+          setIsRegistering(false);
+          setError('Conta criada com sucesso! Faça login agora.');
+          setEmail(email.trim().toLowerCase());
+          setPassword('');
+        } else {
+          const db = JSON.parse(localStorage.getItem('jw_users_db') || '{}');
+          db[data.user.email] = { savedAt: new Date().toISOString() };
+          localStorage.setItem('jw_users_db', JSON.stringify(db));
+          onLogin(data.user.email, data.token);
+        }
       } else {
-        // Salva o usuário na lista local de "Contas salvas"
-        const db = JSON.parse(localStorage.getItem('jw_users_db') || '{}');
-        db[data.user.email] = { savedAt: new Date().toISOString() };
-        localStorage.setItem('jw_users_db', JSON.stringify(db));
-
-        onLogin(data.user.email, data.token);
+        const text = await response.text();
+        console.error("[AUTH ERRO] Resposta não-JSON recebida:", text.substring(0, 100));
+        throw new Error('O servidor retornou uma página de erro (HTML) em vez de JSON. Verifique as rotas do backend.');
       }
     } catch (err: any) {
       console.error(err);

@@ -8,86 +8,81 @@ import syncRoutes from "./routes/sync.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, "../../"); // from backend/src/ to root
-const distPath = path.join(rootDir, "dist");
-
 dotenv.config();
 
-const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootDir = path.resolve(__dirname, "../../"); // Vai de backend/src/ para a raiz do projeto
+const distPath = path.join(rootDir, "dist");
 
+const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
 
-// Verificação de Variáveis
-const REQUIRED_ENV = ['JW_API_GEMINI', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
-console.log("--- Verificando Configurações ---");
-REQUIRED_ENV.forEach(env => {
-    if (!process.env[env] && env !== 'JW_API_GEMINI') {
-        console.warn(`[AVISO] Variável ${env} não configurada!`);
-    } else if (env === 'JW_API_GEMINI' && !process.env.JW_API_GEMINI && !process.env.GEMINI_API_KEY) {
-        console.warn(`[AVISO] Variável de IA não configurada!`);
-    } else {
-        console.log(`[OK] ${env} detectada.`);
-    }
-});
-console.log("---------------------------------");
-
+// Middlewares Iniciais
 app.use(express.json());
+app.use(cors({
+    origin: FRONTEND_ORIGIN,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+}));
 
-app.use(
-    cors({
-        origin: FRONTEND_ORIGIN,
-        methods: ["GET", "POST", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-    })
-);
+// Logger de Requisições (EXTREMAMENTE IMPORTANTE PARA DEBUG NA HOSTINGER)
+app.use((req, res, next) => {
+    console.log(`[REQ] ${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
 
-// Statics
-app.use(express.static(distPath));
+// TESTE DE ROTA PURA (Acesse /api/test no navegador)
+app.get("/api/test", (req, res) => {
+    res.json({ message: "API está respondendo corretamente!", timestamp: new Date() });
+});
 
-// Rotas de Autenticação e Sincronização
+// Rotas de API (DEVEM VIR ANTES DO STATIC E DO FALLBACK)
 app.use("/api/auth", authRoutes);
 app.use("/api/sync", syncRoutes);
 
-app.get("/health", (req, res) => {
-    res.json({ status: "ok", message: "Servidor online", timestamp: new Date() });
+app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", message: "Servidor online", db: "pending" });
 });
 
 app.post("/api/chat", async (req, res) => {
     try {
         const payload = req.body;
         if (!payload) return res.status(400).json({ error: "Corpo vazio." });
-
         const result = await model.generateContent(payload.prompt || payload);
         const response = await result.response;
         return res.json({ reply: response.text() });
     } catch (error) {
-        console.error("Erro no backend:", error);
-        return res.status(500).json({ error: "Erro na IA.", message: error.message });
+        console.error("[ERRO CHAT]", error);
+        return res.status(500).json({ error: "Erro na IA." });
     }
 });
 
-// SPA Fallback (Deve ser a última rota)
+// Servidor de Arquivos Estáticos (Frontend Build)
+app.use(express.static(distPath));
+
+// Fallback para SPA (Single Page Application)
 app.get("*", (req, res) => {
-    if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'API route not found' });
+    // Se a rota começa com /api e chegou aqui, é um 404 de API real
+    if (req.url.startsWith('/api')) {
+        console.warn(`[404 API] Rota não encontrada: ${req.url}`);
+        return res.status(404).json({ error: "API Route Not Found" });
     }
+    // Caso contrário, serve o index.html do frontend
     res.sendFile(path.join(distPath, "index.html"));
 });
 
 const start = async () => {
-    // Inicia o servidor primeiro para evitar timeout na Hostinger
     app.listen(PORT, async () => {
         console.log(`[SERVER] Rodando na porta ${PORT}`);
-        console.log(`[SERVER] Frontend autorizado: ${FRONTEND_ORIGIN}`);
+        console.log(`[SERVER] Dist Path: ${distPath}`);
 
-        // Inicializa o DB em background
         try {
             await initDB();
+            console.log("[DB] Banco de dados inicializado.");
         } catch (err) {
-            console.error("[SERVER] Falha ao inicializar o banco:", err.message);
+            console.error("[DB ERRO]", err.message);
         }
     });
 };
