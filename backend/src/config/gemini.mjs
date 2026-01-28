@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.JW_API_GEMINI || process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
     // Enforced error locally, but in production we catch this to prevent process crash

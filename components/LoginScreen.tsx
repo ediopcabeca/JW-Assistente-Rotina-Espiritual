@@ -15,8 +15,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [loading, setLoading] = useState(false);
   const [savedUsers, setSavedUsers] = useState<string[]>([]);
 
-  // TODO: Substituir pelo seu Client ID real do Google Cloud Console
-  const GOOGLE_CLIENT_ID = "523293.hostinger.site.apps.googleusercontent.com"; // Placeholder baseado na imagem
+  // Client ID do Google Cloud Console retirado do painel Hostinger
+  const GOOGLE_CLIENT_ID = "172285702411-fpdidnlddbdr177gc7j8iok6j56ufges.apps.googleusercontent.com";
 
   useEffect(() => {
     try {
