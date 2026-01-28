@@ -85,22 +85,13 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
       if (syncAdapter.isAvailable()) {
         await syncAdapter.pullUserData();
       }
-
       refreshState();
-      setHighlights('');
-      setCachedAudio(null);
-      setSelectedBook(null);
 
-      // 2. Busca pérola persistente para a leitura de hoje
-      const reading = getReadingForToday(userId);
-      if (reading.text) {
-        fetchHighlight(reading.text);
-      }
-
-      // 3. Configura pull periódico (a cada 30 segundos)
+      // 2. Configura pull periódico (a cada 30 segundos)
       interval = setInterval(async () => {
         if (syncAdapter.isAvailable()) {
           const changed = await syncAdapter.pullUserData();
+          // Se houve mudança (pullUserData retorna true se baixou algo), atualizamos
           if (changed) {
             refreshState();
           }
@@ -109,8 +100,18 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
     };
 
     init();
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [userId]);
+
+  // Busca pérolas automaticamente quando o texto da leitura mudar 
+  // (seja por clique, por data ou por sincronização vinda de outro dispositivo)
+  useEffect(() => {
+    if (dailyReading.text) {
+      fetchHighlight(dailyReading.text);
+    }
+  }, [dailyReading.text]);
 
   const handleGenerate = async (chaptersToUse: string) => {
     if (!chaptersToUse) return;

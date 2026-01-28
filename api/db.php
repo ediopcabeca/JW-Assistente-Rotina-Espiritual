@@ -55,6 +55,11 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS app_settings (s_key VARCHAR(50) PRIMARY KEY, s_value TEXT) ENGINE=InnoDB;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS bible_highlights (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, chapters VARCHAR(255) NOT NULL, content LONGTEXT NOT NULL, audio_content LONGTEXT, is_read TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(user_id, chapters), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
 
+    // Upgrade de colunas para quem já tinha o banco criado com limites menores
+    $pdo->exec("ALTER TABLE user_data MODIFY COLUMN sync_data LONGTEXT;");
+    $pdo->exec("ALTER TABLE bible_highlights MODIFY COLUMN content LONGTEXT;");
+    $pdo->exec("ALTER TABLE bible_highlights MODIFY COLUMN audio_content LONGTEXT;");
+
 } catch (PDOException $e) {
     header("Content-Type: application/json");
     http_response_code(500);

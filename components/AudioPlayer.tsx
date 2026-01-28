@@ -69,7 +69,7 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ text, label = "Ouvir Conteúd
                     className="flex items-center gap-2 px-3 py-1.5 bg-green-600 opacity-50 text-white rounded-lg text-xs font-bold transition-all"
                 >
                     <Loader2 size={14} className="animate-spin" />
-                    Gerando...
+                    {cachedAudio ? 'Carregando...' : 'Gerando...'}
                 </button>
             ) : status === 'playing' ? (
                 <button
