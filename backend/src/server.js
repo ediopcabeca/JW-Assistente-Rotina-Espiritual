@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { model } from "./config/gemini.js";
-import { initDB } from "./config/db.js";
+import { initDB, pool } from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import syncRoutes from "./routes/sync.js";
 import path from "path";
@@ -12,14 +12,14 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, "../../"); // Vai de backend/src/ para a raiz do projeto
+const rootDir = path.resolve(__dirname, "../../");
 const distPath = path.join(rootDir, "dist");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
 
-// Middlewares Iniciais
+// 1. Middlewares
 app.use(express.json());
 app.use(cors({
     origin: FRONTEND_ORIGIN,
@@ -27,23 +27,38 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Logger de Requisições (EXTREMAMENTE IMPORTANTE PARA DEBUG NA HOSTINGER)
+// 2. Request Logger
 app.use((req, res, next) => {
     console.log(`[REQ] ${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
 });
 
-// TESTE DE ROTA PURA (Acesse /api/test no navegador)
+// 3. API Routes
 app.get("/api/test", (req, res) => {
     res.json({ message: "API está respondendo corretamente!", timestamp: new Date() });
 });
 
-// Rotas de API (DEVEM VIR ANTES DO STATIC E DO FALLBACK)
 app.use("/api/auth", authRoutes);
 app.use("/api/sync", syncRoutes);
 
-app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", message: "Servidor online", db: "pending" });
+app.get("/api/health", async (req, res) => {
+    try {
+        await pool.query('SELECT 1');
+        res.json({
+            status: "ok",
+            message: "Servidor online e integrado",
+            db: "conectado",
+            timestamp: new Date().toISOString()
+        });
+    } catch (err) {
+        console.error("[HEALTH CHECK] Erro no DB:", err.message);
+        res.status(500).json({
+            status: "error",
+            message: "Servidor online, mas erro no Banco de Dados",
+            db: "erro",
+            error: err.message
+        });
+    }
 });
 
 app.post("/api/chat", async (req, res) => {
@@ -55,28 +70,34 @@ app.post("/api/chat", async (req, res) => {
         return res.json({ reply: response.text() });
     } catch (error) {
         console.error("[ERRO CHAT]", error);
-        return res.status(500).json({ error: "Erro na IA." });
+        return res.status(500).json({ error: "IA Error" });
     }
 });
 
-// Servidor de Arquivos Estáticos (Frontend Build)
+// 4. API Fallback (404 JSON para qualquer /api que não existia acima)
+app.all("/api/*", (req, res) => {
+    console.warn(`[404 API] Rota não encontrada: ${req.method} ${req.url}`);
+    res.status(404).json({ error: "API Route Not Found", path: req.url });
+});
+
+// 5. Static Files (Frontend)
 app.use(express.static(distPath));
 
-// Fallback para SPA (Single Page Application)
+// 6. SPA Fallback (Serve index.html para qualquer rota GET que não seja arquivo estático)
 app.get("*", (req, res) => {
-    // Se a rota começa com /api e chegou aqui, é um 404 de API real
-    if (req.url.startsWith('/api')) {
-        console.warn(`[404 API] Rota não encontrada: ${req.url}`);
-        return res.status(404).json({ error: "API Route Not Found" });
-    }
-    // Caso contrário, serve o index.html do frontend
     res.sendFile(path.join(distPath, "index.html"));
+});
+
+// 7. Global Error Handler
+app.use((err, req, res, next) => {
+    console.error("[GLOBAL ERROR]", err);
+    res.status(500).json({ error: "Internal Server Error", message: err.message });
 });
 
 const start = async () => {
     app.listen(PORT, async () => {
         console.log(`[SERVER] Rodando na porta ${PORT}`);
-        console.log(`[SERVER] Dist Path: ${distPath}`);
+        console.log(`[SERVER] Static files from: ${distPath}`);
 
         try {
             await initDB();

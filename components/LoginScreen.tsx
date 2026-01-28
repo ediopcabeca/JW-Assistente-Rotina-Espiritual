@@ -49,7 +49,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
 
     try {
-      const apiHost = window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin;
+      const apiHost = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
       const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
       const url = `${apiHost}${endpoint}`;
 
@@ -84,8 +84,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         }
       } else {
         const text = await response.text();
-        console.error("[AUTH ERRO] Resposta não-JSON recebida:", text.substring(0, 100));
-        throw new Error('O servidor retornou uma página de erro (HTML) em vez de JSON. Verifique as rotas do backend.');
+        console.error(`[AUTH ERRO] Status ${response.status}. Resposta não-JSON:`, text.substring(0, 100));
+
+        if (response.status === 404) {
+          throw new Error('Erro 404: Rota de registro não encontrada no servidor. Verifique se o Node.js está rodando a versão mais recente.');
+        } else if (response.status === 500) {
+          throw new Error('Erro 500: Erro interno no servidor. Verifique os logs na Hostinger ou a conexão com o Banco de Dados.');
+        } else {
+          throw new Error(`Erro ${response.status}: O servidor retornou HTML em vez de JSON. Verifique as rotas do backend.`);
+        }
       }
     } catch (err: any) {
       console.error(err);
