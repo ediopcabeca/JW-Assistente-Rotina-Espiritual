@@ -48,7 +48,7 @@ const IllustrationBuilder: React.FC = () => {
                         <h1 className="text-4xl font-black text-white tracking-tighter uppercase">INSTRUA</h1>
                     </div>
                     <p className="text-gray-400 text-lg max-w-xl mx-auto leading-tight">
-                        Ferramentas avançadas para oradores e instrutores bíblicos.
+                        Crie ilustrações memoráveis e prepare discursos públicos com ferramentas baseadas na metodologia de Jesus.
                     </p>
 
                     {/* Mode Switcher */}

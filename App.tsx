@@ -138,8 +138,8 @@ const App: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <DashboardCard
-                title="Instrutor de Ilustrações"
-                description="Crie ilustrações memoráveis (INSTRUA) para seus discursos."
+                title="INSTRUA: Ilustrações e Discursos"
+                description="Crie ilustrações memoráveis e prepare seus discursos públicos."
                 icon={<Palette size={32} className="text-indigo-600 dark:text-indigo-400" />}
                 color="bg-indigo-50 hover:bg-indigo-100 border-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 dark:border-indigo-800"
                 className="md:col-span-2 border-2 border-indigo-500 shadow-xl shadow-indigo-500/10"
