@@ -2,7 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
-import { pool } from '../config/db.mjs';
+import { pool } from '../config/db.js';
 
 const router = express.Router();
 console.log("[INÍCIO] Carregando Rotas de Autenticação...");

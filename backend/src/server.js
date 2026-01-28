@@ -1,9 +1,9 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { model } from "./config/gemini.mjs";
-import { initDB } from "./config/db.mjs";
-import authRoutes from "./routes/auth.mjs";
+import { model } from "./config/gemini.js";
+import { initDB } from "./config/db.js";
+import authRoutes from "./routes/auth.js";
 
 dotenv.config();
 
