@@ -21,7 +21,6 @@ import {
   Moon,
   LogOut,
   User,
-  BrainCircuit,
   PanelLeftClose,
   PanelLeft,
   Palette,
@@ -155,7 +154,7 @@ const App: React.FC = () => {
         return (
           <div className="max-w-4xl mx-auto p-4 animate-fade-in">
             <header className="mb-10 text-center">
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Seu Assistente Espiritual</h1>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">JW: Assistente Espiritual</h1>
               <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
                 Organize sua rotina, prepare ilustrações poderosas e formate discursos para estudo profundo.
               </p>
@@ -181,9 +180,9 @@ const App: React.FC = () => {
                 title="Estudo Profundo"
                 description="Gere perguntas parágrafo por parágrafo para publicações."
                 icon={
-                  <div className="relative">
-                    <BookOpen size={32} className="text-purple-600 dark:text-purple-400" />
-                    <Search size={16} className="absolute -bottom-1 -right-1 text-purple-700 dark:text-purple-300 bg-white dark:bg-gray-800 rounded-full" />
+                  <div className="relative flex items-center justify-center">
+                    <BookOpen size={30} className="text-purple-600 dark:text-purple-400" />
+                    <Search size={14} className="absolute -bottom-0.5 -right-0.5 text-white bg-purple-600 rounded-full p-0.5" />
                   </div>
                 }
                 color="bg-purple-50 hover:bg-purple-100 border-purple-200 dark:bg-purple-900/20 dark:hover:bg-indigo-900/30 dark:border-purple-800"
@@ -330,9 +329,9 @@ const App: React.FC = () => {
               view={AppView.STUDY_QUESTIONS}
               label="Estudo Profundo"
               icon={
-                <div className="relative">
-                  <BookOpen size={20} />
-                  <Search size={10} className="absolute -bottom-0.5 -right-0.5" />
+                <div className="relative flex items-center justify-center">
+                  <BookOpen size={20} className={currentView === AppView.STUDY_QUESTIONS ? 'text-white' : 'text-purple-500'} />
+                  <Search size={10} className={`absolute -bottom-0.5 -right-0.5 rounded-full p-[1px] ${currentView === AppView.STUDY_QUESTIONS ? 'bg-white text-blue-600' : 'bg-purple-500 text-white'}`} />
                 </div>
               }
             />

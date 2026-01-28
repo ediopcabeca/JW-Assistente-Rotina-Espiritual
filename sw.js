@@ -1,3 +1,4 @@
+// sw.js - update: 2026-01-28 12:40
 self.addEventListener('install', (e) => {
   self.skipWaiting();
 });
