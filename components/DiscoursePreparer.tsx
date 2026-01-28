@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { generateDiscoursePreparation } from '../services/geminiService';
-import { Loader2, ArrowRight, BookOpen, Clock, FileText, ClipboardList, Volume2 } from 'lucide-react';
+import { Loader2, ArrowRight, BookOpen, Clock, FileText, ClipboardList, Trash2, History, Mic2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import AudioPlayer from './AudioPlayer';
 
@@ -12,6 +12,28 @@ const DiscoursePreparer: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<{ fullText: string; summary: string } | null>(null);
     const [activeTab, setActiveTab] = useState<'treino' | 'tribuna'>('treino');
+    const [history, setHistory] = useState<any[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const fetchHistory = async () => {
+        const token = localStorage.getItem('jw_auth_token');
+        if (!token) return;
+        try {
+            const res = await fetch('/api/discourses.php', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setHistory(data);
+            }
+        } catch (e) {
+            console.error("Error fetching history:", e);
+        }
+    };
+
+    useEffect(() => {
+        fetchHistory();
+    }, []);
 
     const handleGenerate = async () => {
         if (!material) return;
@@ -20,6 +42,24 @@ const DiscoursePreparer: React.FC = () => {
         try {
             const output = await generateDiscoursePreparation(material, scriptures, time, resources);
             setResult(output);
+
+            // Salva no banco para sincronização
+            const token = localStorage.getItem('jw_auth_token');
+            if (token) {
+                await fetch('/api/discourses.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        material, scriptures, time_min: time, resources,
+                        full_text: output.fullText,
+                        summary: output.summary
+                    })
+                });
+                fetchHistory();
+            }
         } catch (error) {
             console.error("Error generating discourse prep:", error);
         } finally {
@@ -27,8 +67,70 @@ const DiscoursePreparer: React.FC = () => {
         }
     };
 
+    const loadFromHistory = (item: any) => {
+        setMaterial(item.material || '');
+        setScriptures(item.scriptures || '');
+        setTime(item.time_min || '5');
+        setResources(item.resources || '');
+        setResult({ fullText: item.full_text, summary: item.summary });
+        setShowHistory(false);
+    };
+
+    const deleteHistory = async (id: number) => {
+        const token = localStorage.getItem('jw_auth_token');
+        if (!token) return;
+        if (!confirm("Excluir este discurso salvo?")) return;
+
+        await fetch(`/api/discourses.php?id=${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        fetchHistory();
+    };
+
     return (
         <div className="space-y-8 animate-fade-in">
+            {/* Header com Histórico */}
+            <div className="flex justify-between items-center">
+                <h2 className="text-white font-bold flex items-center gap-2">
+                    <Mic2 size={20} className="text-indigo-400" /> Preparador de Discursos
+                </h2>
+                <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-bold rounded-xl transition-all"
+                >
+                    <History size={14} />
+                    {showHistory ? "Fechar Histórico" : "Ver Salvos"}
+                </button>
+            </div>
+
+            {showHistory && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
+                    {history.length === 0 ? (
+                        <p className="text-gray-500 text-sm italic col-span-2">Nenhum discurso salvo ainda.</p>
+                    ) : (
+                        history.map((item) => (
+                            <div key={item.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-start group">
+                                <div className="cursor-pointer flex-1" onClick={() => loadFromHistory(item)}>
+                                    <p className="text-white font-bold text-sm truncate pr-4">
+                                        {item.material?.substring(0, 50)}...
+                                    </p>
+                                    <p className="text-gray-500 text-[10px] mt-1">
+                                        {new Date(item.created_at).toLocaleDateString('pt-BR')} • {item.time_min} min
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => deleteHistory(item.id)}
+                                    className="p-2 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        ))
+                    )}
+                </div>
+            )}
+
             <div className="bg-slate-900/50 p-6 rounded-2xl border border-slate-800 space-y-6">
                 {/* Input Material */}
                 <div className="space-y-2">
