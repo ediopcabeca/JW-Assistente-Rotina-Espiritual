@@ -98,11 +98,11 @@ const StudyQuestionsHelper: React.FC = () => {
               <div className="prose prose-purple dark:prose-invert max-w-none bg-purple-50 dark:bg-purple-900/10 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50">
                 <ReactMarkdown
                   components={{
-                    h3: ({ node, ...props }) => <h3 className="text-lg font-bold text-purple-800 dark:text-purple-300 mt-6 mb-3 border-b border-purple-200 dark:border-purple-800 pb-1" {...props} />,
-                    strong: ({ node, ...props }) => <strong className="font-bold text-purple-900 dark:text-purple-100" {...props} />,
-                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-300" {...props} />,
+                    h3: ({ node, ...props }) => <h3 className="text-lg font-bold text-purple-800 dark:text-purple-200 mt-6 mb-3 border-b border-purple-200 dark:border-purple-800 pb-1" {...props} />,
+                    strong: ({ node, ...props }) => <strong className="font-bold text-purple-900 dark:text-white" {...props} />,
+                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 text-gray-700 dark:text-gray-100" {...props} />,
                     li: ({ node, ...props }) => <li className="mb-2" {...props} />,
-                    p: ({ node, ...props }) => <p className="text-gray-700 dark:text-gray-300 mb-4 leading-relaxed" {...props} />,
+                    p: ({ node, ...props }) => <p className="text-gray-700 dark:text-gray-100 mb-4 leading-relaxed" {...props} />,
                   }}
                 >
                   {result}

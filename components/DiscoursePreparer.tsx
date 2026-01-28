@@ -117,8 +117,10 @@ const DiscoursePreparer: React.FC = () => {
                             <ReactMarkdown
                                 components={{
                                     h3: ({ node, ...props }) => <h3 className="text-xl font-black text-indigo-400 flex items-center gap-2 mb-4 border-b border-slate-800 pb-2" {...props} />,
-                                    p: ({ node, ...props }) => <p className="text-gray-300 leading-relaxed text-lg" {...props} />,
+                                    p: ({ node, ...props }) => <p className="text-gray-300 dark:text-gray-100 leading-relaxed text-lg" {...props} />,
                                     strong: ({ node, ...props }) => <strong className="text-white font-bold bg-indigo-900/30 px-1 rounded" {...props} />,
+                                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 text-gray-300 dark:text-gray-100" {...props} />,
+                                    li: ({ node, ...props }) => <li className="mb-2" {...props} />,
                                 }}
                             >
                                 {activeTab === 'treino' ? result.fullText : result.summary}

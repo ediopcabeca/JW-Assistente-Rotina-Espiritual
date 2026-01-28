@@ -142,7 +142,17 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
         {highlights && (
           <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-indigo-50/30 dark:bg-indigo-900/10">
             <div className="prose prose-indigo dark:prose-invert max-w-none">
-              <ReactMarkdown>{highlights}</ReactMarkdown>
+              <ReactMarkdown
+                components={{
+                  h3: ({ node, ...props }) => <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-200 mt-6 mb-3" {...props} />,
+                  p: ({ node, ...props }) => <p className="text-gray-800 dark:text-gray-100 mb-4 leading-relaxed" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 text-gray-800 dark:text-gray-100" {...props} />,
+                  li: ({ node, ...props }) => <li className="mb-1" {...props} />,
+                  strong: ({ node, ...props }) => <strong className="font-bold text-indigo-900 dark:text-white" {...props} />,
+                }}
+              >
+                {highlights}
+              </ReactMarkdown>
             </div>
           </div>
         )}
