@@ -1,5 +1,11 @@
 <?php
 // api/db.php
+// Configuração robusta para Hostinger
+
+// Impede que avisos do PHP 'quebrem' o JSON do frontend
+error_reporting(0);
+ini_set('display_errors', 0);
+
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -9,18 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit(0);
 }
 
-// 1. Carregar Configurações (Tenta env do servidor primeiro, depois arquivo local)
-$host = getenv('DB_HOST') ?: 'localhost';
-$db = getenv('DB_NAME');
-$user = getenv('DB_USER');
-$pass = getenv('DB_PASSWORD');
-$jwt_secret = getenv('JWT_SECRET') ?: 'jw_segredo_padrao_2026';
+// 1. Carregar Configurações
+$host = 'localhost';
+$db = '';
+$user = '';
+$pass = '';
+$jwt_secret = 'jw_segredo_espiritual_2026';
 
-// Se não encontrou no servidor, tenta carregar de um arquivo config.php na raiz (fora do dist) 
-// ou na mesma pasta para facilitar
 if (file_exists(__DIR__ . '/config.php')) {
     include_once __DIR__ . '/config.php';
-    // O arquivo config.php deve definir as variáveis se elas não existirem
     if (isset($CFG_DB_HOST))
         $host = $CFG_DB_HOST;
     if (isset($CFG_DB_NAME))
@@ -29,13 +32,11 @@ if (file_exists(__DIR__ . '/config.php')) {
         $user = $CFG_DB_USER;
     if (isset($CFG_DB_PASS))
         $pass = $CFG_DB_PASS;
-    if (isset($CFG_JWT_SECRET))
-        $jwt_secret = $CFG_JWT_SECRET;
 }
 
 if (!$db || !$user) {
     http_response_code(500);
-    echo json_encode(["error" => "Configuração do banco de dados ausente no servidor. Crie o arquivo api/config.php."]);
+    echo json_encode(["status" => "error", "error" => "Configuração incompleta no arquivo api/config.php"]);
     exit;
 }
 
@@ -48,9 +49,25 @@ $options = [
 
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
+
+    // CRUCIAL: Criar as tabelas se elas não existirem (Igual fazíamos no Node.js)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY, 
+        email VARCHAR(255) NOT NULL UNIQUE, 
+        password_hash VARCHAR(255) NOT NULL, 
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+     ) ENGINE=InnoDB;");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS user_data (
+        user_id INT PRIMARY KEY, 
+        sync_data LONGTEXT, 
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+     ) ENGINE=InnoDB;");
+
 } catch (\PDOException $e) {
     http_response_code(500);
-    echo json_encode(["error" => "Erro de conexão MySQL: " . $e->getMessage()]);
+    echo json_encode(["status" => "error", "error" => "Erro de conexão/DB: " . $e->getMessage()]);
     exit;
 }
 
