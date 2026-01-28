@@ -114,12 +114,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 transition-colors duration-200">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-100 dark:border-gray-700">
 
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-center text-white relative">
-          <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <User size={32} className="text-white" />
+        <div className="bg-[#5a3696] p-8 text-center text-white relative">
+          <div className="w-20 h-20 bg-[#5a3696] border-2 border-white/30 rounded-2xl flex flex-col items-center justify-center mx-auto mb-4 shadow-lg overflow-hidden">
+            <span className="text-2xl font-black leading-none mt-1">JW</span>
+            <span className="text-[8px] font-bold tracking-widest leading-none mb-1">ASSISTENTE</span>
           </div>
           <h1 className="text-2xl font-bold mb-1">Bem-vindo</h1>
-          <p className="text-blue-100 text-sm">Acesse sua rotina espiritual</p>
+          <p className="text-purple-100 text-sm opacity-80">Sincronize sua rotina espiritual</p>
         </div>
 
         {savedUsers.length > 0 && !isRegistering && (

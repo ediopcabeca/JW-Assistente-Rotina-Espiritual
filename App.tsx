@@ -253,7 +253,7 @@ const App: React.FC = () => {
       <div className="md:hidden bg-white dark:bg-gray-900 p-4 flex justify-between items-center shadow-sm z-20 relative border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center gap-2">
           {/* Standardized Logo for Mobile */}
-          <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">JW</span>
+          <span className="w-8 h-8 bg-[#5a3696] rounded-lg flex items-center justify-center text-white font-bold text-xs">JW</span>
           <span className="font-bold text-gray-800 dark:text-white text-lg">Assistente</span>
         </div>
         <div className="flex items-center gap-3">
@@ -291,7 +291,7 @@ const App: React.FC = () => {
           <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start">
             <div>
               <h1 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">JW</span>
+                <span className="w-8 h-8 bg-[#5a3696] rounded-lg flex items-center justify-center text-white font-bold text-xs">JW</span>
                 <span>Assistente</span>
               </h1>
               <div className="mt-4 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
