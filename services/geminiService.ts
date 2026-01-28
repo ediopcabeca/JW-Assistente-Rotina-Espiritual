@@ -158,15 +158,17 @@ export const generateIllustration = async (
 };
 
 const extractJSON = (text: string) => {
+  if (!text) throw new Error("A resposta da IA está vazia.");
+
   try {
     // Tenta parse direto
-    return JSON.parse(text);
+    return JSON.parse(text.trim());
   } catch (e) {
     // Se falhar, tenta extrair o que está entre ```json e ```
     const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
     if (match && match[1]) {
       try {
-        return JSON.parse(match[1]);
+        return JSON.parse(match[1].trim());
       } catch (e2) {
         console.error("Failed to parse extracted JSON:", e2);
       }
@@ -174,14 +176,14 @@ const extractJSON = (text: string) => {
     // Tenta achar o primeiro { e o último }
     const firstBrace = text.indexOf('{');
     const lastBrace = text.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) {
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
       try {
         return JSON.parse(text.substring(firstBrace, lastBrace + 1));
       } catch (e3) {
         console.error("Failed to parse braced JSON:", e3);
       }
     }
-    throw new Error("Could not find valid JSON in AI response");
+    throw new Error("Não foi possível encontrar um formato de resposta válido no resultado da IA.");
   }
 };
 
@@ -238,11 +240,11 @@ export const generateDiscoursePreparation = async (
       },
     });
     return extractJSON(text);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating discourse prep:", error);
     return {
-      fullText: "Erro ao gerar o texto completo. Verifique se o material não é muito curto ou tente novamente.",
-      summary: "Erro ao gerar o resumo."
+      fullText: `Erro na geração: ${error.message || "Verifique sua conexão ou tente um texto menor."}`,
+      summary: "Falha na análise."
     };
   }
 };
