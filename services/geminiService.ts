@@ -108,6 +108,53 @@ export const generateMinistryTips = async (
   }
 };
 
+export const generateIllustration = async (
+  basis: string,
+  audience: string,
+  goal: string,
+  methodology: string
+): Promise<string> => {
+  const prompt = `
+    Atue como um instrutor experiente da Bíblia, especializado na metodologia de ensino de Jesus ("Instrutor de Ilustrações").
+    
+    O usuário precisa de uma ilustração memorável para um discurso ou estudo.
+    
+    CONTEXTO:
+    - Base Bíblica/Ponto: ${basis}
+    - Perfil da Assistência: ${audience}
+    - Objetivo: ${goal}
+    - Metodologia Solicitada: ${methodology}
+    
+    DIRETRIZES DE CRIAÇÃO:
+    1. Transforme "ouvidos em olhos": Crie uma imagem mental nítida.
+    2. Use elementos do cotidiano que a assistência identificará (conforme o perfil).
+    3. A ilustração deve ser breve, mas poderosa.
+    4. Explique a aplicação da ilustração de forma clara no final.
+    
+    ESTRUTURA DO OUTPUT (MARKDOWN):
+    ### 📖 Ilustração Principal
+    (Texto da ilustração/história)
+    
+    ### 💡 A Lição
+    (Explicação de como isso se conecta com o ponto bíblico)
+    
+    ### 🎯 Por que funciona?
+    (Breve explicação do porquê essa comparação atinge o coração daquela assistência específica)
+
+    DIRETRIZES DE IDIOMA (CRÍTICO):
+    - Responda em Português Brasileiro (pt-BR) com acentuação correta.
+    - Garanta que todos os caracteres especiais sejam renderizados corretamente.
+  `;
+
+  try {
+    const text = await callAIProxy({ prompt });
+    return text || "Não foi possível gerar a ilustração.";
+  } catch (error) {
+    console.error("Error generating illustration:", error);
+    return "Erro ao processar sua solicitação.";
+  }
+};
+
 export const generateBibleHighlights = async (
   chapters: string
 ): Promise<string> => {

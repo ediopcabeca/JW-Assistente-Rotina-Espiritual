@@ -5,6 +5,7 @@ import MinistryHelper from './components/MinistryHelper';
 import BibleReading from './components/BibleReading';
 import TranscriptionHelper from './components/TranscriptionHelper';
 import StudyQuestionsHelper from './components/StudyQuestionsHelper';
+import IllustrationBuilder from './components/IllustrationBuilder';
 import LoginScreen from './components/LoginScreen';
 import { getReadingForToday } from './services/bibleData';
 import {
@@ -21,7 +22,8 @@ import {
   User,
   BrainCircuit,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  Palette
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -121,6 +123,8 @@ const App: React.FC = () => {
         return <TranscriptionHelper />;
       case AppView.STUDY_QUESTIONS:
         return <StudyQuestionsHelper />;
+      case AppView.ILLUSTRATIONS:
+        return <IllustrationBuilder />;
       case AppView.DASHBOARD:
       default:
         return (
@@ -128,11 +132,19 @@ const App: React.FC = () => {
             <header className="mb-10 text-center">
               <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Seu Assistente Espiritual</h1>
               <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Organize sua rotina, prepare-se para o ministério e formate discursos para estudo profundo no NotebookLM.
+                Organize sua rotina, prepare ilustrações poderosas e formate discursos para estudo profundo.
               </p>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DashboardCard
+                title="Instrutor de Ilustrações"
+                description="Crie ilustrações memoráveis (INSTRUA) para seus discursos."
+                icon={<Palette size={32} className="text-indigo-600 dark:text-indigo-400" />}
+                color="bg-indigo-50 hover:bg-indigo-100 border-indigo-200 dark:bg-indigo-900/20 dark:hover:bg-indigo-900/30 dark:border-indigo-800"
+                className="md:col-span-2 border-2 border-indigo-500 shadow-xl shadow-indigo-500/10"
+                onClick={() => setCurrentView(AppView.ILLUSTRATIONS)}
+              />
               <DashboardCard
                 title="Planejar Semana"
                 description="Crie um cronograma de estudo adaptado ao seu tempo."
@@ -282,6 +294,7 @@ const App: React.FC = () => {
           </div>
           <nav className="p-4 space-y-2">
             <NavItem view={AppView.DASHBOARD} label="Início" icon={<LayoutDashboard size={20} />} />
+            <NavItem view={AppView.ILLUSTRATIONS} label="INSTRUA" icon={<Palette size={20} />} />
             <NavItem view={AppView.SCHEDULE} label="Cronograma" icon={<CalendarDays size={20} />} />
             <NavItem view={AppView.STUDY_QUESTIONS} label="Estudo Profundo" icon={<BrainCircuit size={20} />} />
             <NavItem view={AppView.MINISTRY} label="Ministério" icon={<Briefcase size={20} />} />
