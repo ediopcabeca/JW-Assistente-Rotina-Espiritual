@@ -52,8 +52,18 @@ if (isset($data['contents'])) {
         if (isset($data['config']['systemInstruction'])) {
             $geminiPayload['systemInstruction'] = ["parts" => [["text" => $data['config']['systemInstruction']]]];
         }
+
+        // Mapeia configurações de geração
+        $genConfig = [];
         if (isset($data['config']['responseMimeType'])) {
-            $geminiPayload['generationConfig']['responseMimeType'] = $data['config']['responseMimeType'];
+            $genConfig['responseMimeType'] = $data['config']['responseMimeType'];
+        }
+        if (isset($data['config']['responseSchema'])) {
+            $genConfig['responseSchema'] = $data['config']['responseSchema'];
+        }
+
+        if (!empty($genConfig)) {
+            $geminiPayload['generationConfig'] = $genConfig;
         }
     }
 } else {
@@ -73,7 +83,7 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($geminiPayload));
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Aumentado para 60s para discursos longos
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -82,7 +92,13 @@ curl_close($ch);
 
 if ($httpCode !== 200) {
     http_response_code($httpCode ?: 500);
-    echo $response ?: json_encode(["error" => "Erro na conexão com Google API: " . $curlError]);
+    // Tenta decodificar o erro do Gemini para ser informativo
+    $errorBody = json_decode($response, true);
+    if (isset($errorBody['error']['message'])) {
+        echo json_encode(["error" => "Gemini API: " . $errorBody['error']['message']]);
+    } else {
+        echo $response ?: json_encode(["error" => "Erro na conexão com Google API: " . $curlError]);
+    }
 } else {
     $resData = json_decode($response, true);
     $text = $resData['candidates'][0]['content']['parts'][0]['text'] ?? 'Erro ao processar resposta da IA.';
