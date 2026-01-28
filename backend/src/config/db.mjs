@@ -15,10 +15,14 @@ const pool = mysql.createPool({
     queueLimit: 0,
 });
 
-// Função para inicializar o banco de dados
-const initDB = async () => {
+// Exporta a função para ser chamada explicitamente
+export const initDB = async () => {
+    console.log("[DB] Iniciando verificação de tabelas...");
     try {
-        await pool.execute(`
+        const connection = await pool.getConnection();
+        console.log("[DB] Conexão com MySQL estabelecida.");
+
+        await connection.execute(`
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
@@ -27,12 +31,12 @@ const initDB = async () => {
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
-        console.log("Banco de dados inicializado com sucesso.");
+        console.log("[DB] Tabela 'users' verificada/criada.");
+        connection.release();
     } catch (error) {
-        console.error("Erro ao inicializar banco de dados:", error);
+        console.error("[ERRO DB] Falha ao conectar/inicializar banco de dados:", error.message);
+        console.warn("[AVISO] O servidor continuará funcionando, mas o login pode falhar.");
     }
 };
-
-initDB();
 
 export { pool };

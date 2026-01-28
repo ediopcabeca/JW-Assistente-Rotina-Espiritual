@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { model } from "./config/gemini.mjs";
+import { initDB } from "./config/db.mjs";
 import authRoutes from "./routes/auth.mjs";
 
 dotenv.config();
@@ -42,6 +43,10 @@ app.get("/health", (req, res) => {
     res.json({ status: "ok", message: "Servidor online", timestamp: new Date() });
 });
 
+app.get("/", (req, res) => {
+    res.send("<h1>Assistente Espiritual Backend</h1><p>O servidor está rodando corretamente.</p>");
+});
+
 // Rotas de Autenticação
 app.use("/api/auth", authRoutes);
 
@@ -70,6 +75,14 @@ app.post("/api/chat", async (req, res) => {
 });
 
 // Inicia servidor
-app.listen(PORT, () => {
-    console.log(`Servidor Assistente Espiritual rodando na porta ${PORT}`);
-});
+const start = async () => {
+    console.log("[SERVER] Iniciando processo...");
+    await initDB();
+
+    app.listen(PORT, () => {
+        console.log(`[SERVER] Rodando na porta ${PORT}`);
+        console.log(`[SERVER] Frontend autorizado: ${FRONTEND_ORIGIN}`);
+    });
+};
+
+start();
