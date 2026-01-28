@@ -3,7 +3,7 @@
  * Gerencia a sincronização de dados entre o LocalStorage e o Banco de Dados MySQL (Backend)
  */
 
-const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+const API_BASE = ''; // PHP usa caminhos relativos na Hostinger
 
 export const syncAdapter = {
     /**
@@ -21,7 +21,7 @@ export const syncAdapter = {
         if (!token) return false;
 
         try {
-            const response = await fetch(`${API_BASE}/api/sync`, {
+            const response = await fetch(`/api/sync.php`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -61,7 +61,7 @@ export const syncAdapter = {
                 }
             }
 
-            const response = await fetch(`${API_BASE}/api/sync`, {
+            const response = await fetch(`/api/sync.php`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,

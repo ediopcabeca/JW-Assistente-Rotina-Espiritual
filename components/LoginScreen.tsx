@@ -49,13 +49,12 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
 
     try {
-      const apiHost = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
-      const endpoint = isRegistering ? '/api/auth/register' : '/api/auth/login';
-      const url = `${apiHost}${endpoint}`;
+      // Usamos paths relativos para o PHP
+      const endpoint = isRegistering ? '/api/auth.php?action=register' : '/api/auth.php?action=login';
 
-      console.log(`[AUTH] Chamando: ${url}`);
+      console.log(`[AUTH] Chamando: ${endpoint}`);
 
-      const response = await fetch(url, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

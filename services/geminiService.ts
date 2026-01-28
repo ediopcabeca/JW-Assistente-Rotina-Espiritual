@@ -1,8 +1,8 @@
 import { ScheduleItem } from "../types";
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_BASE_URL = '/api/chat.php';
 
 const callAIProxy = async (payload: any): Promise<string> => {
-  const response = await fetch(`${API_BASE_URL}/api/chat`, {
+  const response = await fetch(API_BASE_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
