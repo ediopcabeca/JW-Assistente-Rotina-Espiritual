@@ -155,6 +155,67 @@ export const generateIllustration = async (
   }
 };
 
+export const generateDiscoursePreparation = async (
+  material: string,
+  scriptures: string,
+  time: string,
+  resources: string
+): Promise<{ fullText: string; summary: string }> => {
+  const prompt = `
+    Atue como um instrutor de oratória bíblica experiente para as Testemunhas de Jeová.
+    O objetivo é preparar um orador para um discurso ou parte na tribuna.
+    
+    DADOS FORNECIDOS:
+    - Material de Referência: ${material}
+    - Textos Bíblicos Principais: ${scriptures}
+    - Tempo Disponível: ${time} minutos
+    - Recursos Didáticos (Ilustrações/Exemplos): ${resources}
+    
+    GERI DOIS RESULTADOS DISTINTOS (MARKDOWN):
+
+    RESULTADO 1: "INTEGRA DO DISCURSO (TREINO)"
+    - Escreva o texto completo, palavra por palavra, do que o orador deve dizer.
+    - O texto deve ser natural, conversacional e caber EXATAMENTE no tempo de ${time} minutos (ritmo médio de 130 palavras por minuto).
+    - Inclua as leituras dos textos bíblicos e as aplicações das ilustrações solicitadas.
+    - Use tom de autoridade, mas amoroso e instrutivo.
+
+    RESULTADO 2: "ESBOÇO DE LEMBRETE (TRIBUNA)"
+    - Crie um resumo visualmente limpo com apenas palavras-chave e pontos de destaque.
+    - Destaque os versículos bíblicos em **negrito**.
+    - Inclua marcações de tempo estimadas para cada seção.
+    - Este material deve servir apenas como consulta rápida durante a palestra.
+
+    DIRETRIZES DE IDIOMA:
+    - Português Brasileiro (pt-BR) com acentuação correta.
+    
+    Retorne a resposta no formato JSON com as chaves "fullText" e "summary".
+  `;
+
+  try {
+    const text = await callAIProxy({
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: "object",
+          properties: {
+            fullText: { type: "string" },
+            summary: { type: "string" },
+          },
+          required: ["fullText", "summary"],
+        },
+      },
+    });
+    return JSON.parse(text);
+  } catch (error) {
+    console.error("Error generating discourse prep:", error);
+    return {
+      fullText: "Erro ao gerar o texto completo.",
+      summary: "Erro ao gerar o resumo."
+    };
+  }
+};
+
 export const generateBibleHighlights = async (
   chapters: string
 ): Promise<string> => {
