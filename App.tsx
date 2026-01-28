@@ -226,7 +226,7 @@ const App: React.FC = () => {
     }
   };
 
-  const NavItem = ({ view, label, icon }: { view: AppView; label: string; icon: React.ReactNode }) => (
+  const NavItem = ({ view, label, icon, colorClass }: { view: AppView; label: string; icon: React.ReactNode; colorClass?: string }) => (
     <button
       onClick={() => {
         setCurrentView(view);
@@ -237,7 +237,9 @@ const App: React.FC = () => {
         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
         }`}
     >
-      {icon}
+      <div className={currentView === view ? 'text-white' : (colorClass || '')}>
+        {icon}
+      </div>
       <span className="font-medium whitespace-nowrap">{label}</span>
     </button>
   );
@@ -322,22 +324,23 @@ const App: React.FC = () => {
             </button>
           </div>
           <nav className="p-4 space-y-2">
-            <NavItem view={AppView.DASHBOARD} label="Início" icon={<LayoutDashboard size={20} />} />
-            <NavItem view={AppView.ILLUSTRATIONS} label="INSTRUA" icon={<Palette size={20} />} />
-            <NavItem view={AppView.SCHEDULE} label="Cronograma" icon={<CalendarDays size={20} />} />
+            <NavItem view={AppView.DASHBOARD} label="Início" icon={<LayoutDashboard size={20} />} colorClass="text-blue-500" />
+            <NavItem view={AppView.ILLUSTRATIONS} label="INSTRUA" icon={<Palette size={20} />} colorClass="text-indigo-500" />
+            <NavItem view={AppView.SCHEDULE} label="Cronograma" icon={<CalendarDays size={20} />} colorClass="text-blue-500" />
             <NavItem
               view={AppView.STUDY_QUESTIONS}
               label="Estudo Profundo"
+              colorClass="text-purple-500"
               icon={
                 <div className="relative flex items-center justify-center">
-                  <BookOpen size={20} className={currentView === AppView.STUDY_QUESTIONS ? 'text-white' : 'text-purple-500'} />
+                  <BookOpen size={20} />
                   <Search size={10} className={`absolute -bottom-0.5 -right-0.5 rounded-full p-[1px] ${currentView === AppView.STUDY_QUESTIONS ? 'bg-white text-blue-600' : 'bg-purple-500 text-white'}`} />
                 </div>
               }
             />
-            <NavItem view={AppView.MINISTRY} label="Ministério" icon={<Briefcase size={20} />} />
-            <NavItem view={AppView.BIBLE} label="Leitura Bíblica" icon={<Book size={20} />} />
-            <NavItem view={AppView.TRANSCRIPTION} label="NotebookLM Prep" icon={<FileText size={20} />} />
+            <NavItem view={AppView.MINISTRY} label="Ministério" icon={<Briefcase size={20} />} colorClass="text-orange-500" />
+            <NavItem view={AppView.BIBLE} label="Leitura Bíblica" icon={<Book size={20} />} colorClass="text-indigo-500" />
+            <NavItem view={AppView.TRANSCRIPTION} label="NotebookLM Prep" icon={<FileText size={20} />} colorClass="text-emerald-500" />
           </nav>
         </div>
 
