@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Ignora a pasta API - deixa o PHP rodar normal
+  RewriteRule ^api/ - [L]
+
+  # Se o arquivo existe (ex: imagem, arquivo php), serve ele
+  RewriteCond %{REQUEST_FILENAME} -f
+  RewriteRule ^ - [L]
+
+  # Caso contrário, manda tudo para o index.html (React handles routing)
+  RewriteRule ^ index.html [L]
+</IfModule>

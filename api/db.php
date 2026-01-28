@@ -1,75 +1,73 @@
 <?php
 // api/db.php
-// Configuração robusta para Hostinger
+// Configuração Ultra-Robusta para Hostinger
 
-// Impede que avisos do PHP 'quebrem' o JSON do frontend
-error_reporting(0);
-ini_set('display_errors', 0);
+// 1. Definições Iniciais de Erro (Desativado para produção, mas configurado para JSON caso ocorra algo)
+error_reporting(E_ALL); // Temporário para diagnosticar se necessário
+ini_set('display_errors', 0); // Não mostra erros na tela (evita quebrar o JSON)
 
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Content-Type: application/json; charset=UTF-8");
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
-
-// 1. Carregar Configurações
+// 2. Tenta carregar o arquivo de configuração
 $host = 'localhost';
 $db = '';
 $user = '';
 $pass = '';
 $jwt_secret = 'jw_segredo_espiritual_2026';
 
-if (file_exists(__DIR__ . '/config.php')) {
-    include_once __DIR__ . '/config.php';
-    if (isset($CFG_DB_HOST))
-        $host = $CFG_DB_HOST;
-    if (isset($CFG_DB_NAME))
-        $db = $CFG_DB_NAME;
-    if (isset($CFG_DB_USER))
-        $user = $CFG_DB_USER;
-    if (isset($CFG_DB_PASS))
-        $pass = $CFG_DB_PASS;
-}
-
-if (!$db || !$user) {
-    http_response_code(500);
-    echo json_encode(["status" => "error", "error" => "Configuração incompleta no arquivo api/config.php"]);
-    exit;
-}
-
-$dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
-$options = [
-    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES => false,
-];
-
 try {
-    $pdo = new PDO($dsn, $user, $pass, $options);
-
-    // CRUCIAL: Criar as tabelas se elas não existirem (Igual fazíamos no Node.js)
-    $pdo->exec("CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY, 
-        email VARCHAR(255) NOT NULL UNIQUE, 
-        password_hash VARCHAR(255) NOT NULL, 
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-     ) ENGINE=InnoDB;");
-
-    $pdo->exec("CREATE TABLE IF NOT EXISTS user_data (
-        user_id INT PRIMARY KEY, 
-        sync_data LONGTEXT, 
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, 
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-     ) ENGINE=InnoDB;");
-
-} catch (\PDOException $e) {
+    if (file_exists(__DIR__ . '/config.php')) {
+        // Se houver erro de sintaxe no config.php, isso vai capturar
+        include_once __DIR__ . '/config.php';
+        if (isset($CFG_DB_HOST))
+            $host = $CFG_DB_HOST;
+        if (isset($CFG_DB_NAME))
+            $db = $CFG_DB_NAME;
+        if (isset($CFG_DB_USER))
+            $user = $CFG_DB_USER;
+        if (isset($CFG_DB_PASS))
+            $pass = $CFG_DB_PASS;
+    }
+} catch (Throwable $t) {
+    header("Content-Type: application/json");
     http_response_code(500);
-    echo json_encode(["status" => "error", "error" => "Erro de conexão/DB: " . $e->getMessage()]);
+    echo json_encode(["status" => "error", "error" => "Erro de sintaxe no arquivo api/config.php. Verifique aspas e ponto-e-vírgula."]);
     exit;
 }
+
+// 3. Verifica se os dados básicos existem
+if (empty($db) || empty($user)) {
+    header("Content-Type: application/json");
+    http_response_code(500);
+    echo json_encode(["status" => "error", "error" => "Configuração do Banco de Dados incompleta no api/config.php"]);
+    exit;
+}
+
+// 4. Conexão com o Banco
+try {
+    $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+    ]);
+
+    // Auto-criação de tabelas
+    $pdo->exec("CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(191) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS user_data (user_id INT PRIMARY KEY, sync_data LONGTEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
+
+} catch (PDOException $e) {
+    header("Content-Type: application/json");
+    http_response_code(500);
+    echo json_encode(["status" => "error", "error" => "Erro de Conexão: " . $e->getMessage()]);
+    exit;
+}
+
+// 5. Se chegou aqui, tudo OK - Define o Header Global para o restante do script
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Content-Type: application/json; charset=UTF-8");
+
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS')
+    exit(0);
 
 // Helpers
 function respond($data, $code = 200)
@@ -82,40 +80,26 @@ function respond($data, $code = 200)
 function generateToken($userId, $email)
 {
     global $jwt_secret;
-    $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
-    $payload = json_encode(['id' => $userId, 'email' => $email, 'exp' => time() + (30 * 24 * 60 * 60)]);
-
-    $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-    $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
-
-    $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $jwt_secret, true);
-    $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
-
-    return $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+    $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256']));
+    $payload = base64_encode(json_encode(['id' => $userId, 'email' => $email, 'exp' => time() + (30 * 24 * 60 * 60)]));
+    $signature = hash_hmac('sha256', "$header.$payload", $jwt_secret, true);
+    return "$header.$payload." . base64_encode($signature);
 }
 
 function verifyToken()
 {
     global $jwt_secret;
-    $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (!$authHeader)
+    $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+    if (!$auth)
         return null;
-
-    $token = str_replace('Bearer ', '', $authHeader);
+    $token = str_replace('Bearer ', '', $auth);
     $parts = explode('.', $token);
     if (count($parts) !== 3)
         return null;
-
-    list($header, $payload, $signature) = $parts;
-    $validSignature = hash_hmac('sha256', $header . "." . $payload, $jwt_secret, true);
-    $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($validSignature));
-
-    if ($base64UrlSignature !== $signature)
+    list($h, $p, $s) = $parts;
+    if (base64_encode(hash_hmac('sha256', "$h.$p", $jwt_secret, true)) !== $s)
         return null;
-    $data = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $payload)), true);
-    if ($data['exp'] < time())
-        return null;
-
-    return $data;
+    $data = json_decode(base64_decode($p), true);
+    return ($data['exp'] < time()) ? null : $data;
 }
 ?>
