@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { model } from "./config/gemini.mjs";
+import authRoutes from "./routes/auth.mjs";
 
 dotenv.config();
 
@@ -28,6 +29,9 @@ app.use(
 app.get("/health", (req, res) => {
     res.json({ status: "ok", message: "Servidor online", timestamp: new Date() });
 });
+
+// Rotas de Autenticação
+app.use("/api/auth", authRoutes);
 
 // Endpoint principal: proxy para Gemini (suporta prompt simples ou objeto complexo)
 app.post("/api/chat", async (req, res) => {

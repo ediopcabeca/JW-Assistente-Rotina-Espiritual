@@ -78,14 +78,18 @@ const App: React.FC = () => {
     }
   }, [currentUser]); // Removed currentView to prevent unnecessary re-runs
 
-  const handleLogin = (userId: string) => {
+  const handleLogin = (userId: string, token?: string) => {
     localStorage.setItem('jw_current_session_user', userId);
+    if (token) {
+      localStorage.setItem('jw_auth_token', token);
+    }
     setCurrentUser(userId);
     setCurrentView(AppView.DASHBOARD);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('jw_current_session_user');
+    localStorage.removeItem('jw_auth_token');
     setCurrentUser(null);
   };
 
