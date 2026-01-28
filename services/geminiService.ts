@@ -1,5 +1,5 @@
 import { ScheduleItem } from "../types";
-const API_BASE_URL = '/api/chat.php';
+const API_BASE_URL = 'api/chat.php';
 
 const callAIProxy = async (payload: any): Promise<string> => {
   const response = await fetch(API_BASE_URL, {
