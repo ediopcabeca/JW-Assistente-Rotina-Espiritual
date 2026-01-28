@@ -9,5 +9,5 @@ $CFG_DB_PASS = 'Mp07gp24';
 
 $CFG_JWT_SECRET = 'jw_segredo_espiritual_2026';
 
-$CFG_GEMINI_KEY = 'AIzaSyAGlVUO-ECvM5X80H-4HGpAxa7loVPc1Yw'; // Chave do Google Gemini AI
+$CFG_GEMINI_KEY = 'INSIRA_SUA_NOVA_CHAVE_AQUI';
 ?>
