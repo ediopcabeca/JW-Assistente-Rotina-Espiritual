@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { model } from "./config/gemini.js";
+import { initDB } from "./config/db.js";
+import authRoutes from "./routes/auth.js";
+import syncRoutes from "./routes/sync.js";
 
 dotenv.config();
 
@@ -10,14 +13,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
 
-// Verificação simplificada
-const REQUIRED_ENV = ['JW_API_GEMINI'];
+// Verificação de Variáveis
+const REQUIRED_ENV = ['JW_API_GEMINI', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET'];
 console.log("--- Verificando Configurações ---");
 REQUIRED_ENV.forEach(env => {
-    if (!process.env[env] && !process.env.GEMINI_API_KEY) {
-        console.warn(`[AVISO] Variável ${env} (ou GEMINI_API_KEY) não configurada!`);
+    if (!process.env[env] && env !== 'JW_API_GEMINI') {
+        console.warn(`[AVISO] Variável ${env} não configurada!`);
+    } else if (env === 'JW_API_GEMINI' && !process.env.JW_API_GEMINI && !process.env.GEMINI_API_KEY) {
+        console.warn(`[AVISO] Variável de IA não configurada!`);
     } else {
-        console.log(`[OK] Variável de IA detectada.`);
+        console.log(`[OK] ${env} detectada.`);
     }
 });
 console.log("---------------------------------");
@@ -28,16 +33,20 @@ app.use(
     cors({
         origin: FRONTEND_ORIGIN,
         methods: ["GET", "POST", "OPTIONS"],
-        allowedHeaders: ["Content-Type"],
+        allowedHeaders: ["Content-Type", "Authorization"],
     })
 );
+
+// Rotas de Autenticação e Sincronização
+app.use("/api/auth", authRoutes);
+app.use("/api/sync", syncRoutes);
 
 app.get("/health", (req, res) => {
     res.json({ status: "ok", message: "Servidor online", timestamp: new Date() });
 });
 
 app.get("/", (req, res) => {
-    res.send("<h1>Assistente Espiritual Backend</h1><p>O servidor está rodando corretamente (Modo Simples).</p>");
+    res.send("<h1>Assistente Espiritual Backend</h1><p>O servidor está rodando com suporte a Sincronização MySQL.</p>");
 });
 
 app.post("/api/chat", async (req, res) => {
@@ -54,7 +63,19 @@ app.post("/api/chat", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`[SERVER] Rodando na porta ${PORT}`);
-    console.log(`[SERVER] Frontend autorizado: ${FRONTEND_ORIGIN}`);
-});
+const start = async () => {
+    // Inicia o servidor primeiro para evitar timeout na Hostinger
+    app.listen(PORT, async () => {
+        console.log(`[SERVER] Rodando na porta ${PORT}`);
+        console.log(`[SERVER] Frontend autorizado: ${FRONTEND_ORIGIN}`);
+
+        // Inicializa o DB em background
+        try {
+            await initDB();
+        } catch (err) {
+            console.error("[SERVER] Falha ao inicializar o banco:", err.message);
+        }
+    });
+};
+
+start();

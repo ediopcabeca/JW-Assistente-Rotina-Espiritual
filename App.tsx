@@ -7,6 +7,7 @@ import TranscriptionHelper from './components/TranscriptionHelper';
 import StudyQuestionsHelper from './components/StudyQuestionsHelper';
 import IllustrationBuilder from './components/IllustrationBuilder';
 import LoginScreen from './components/LoginScreen';
+import { syncAdapter } from './services/syncAdapter';
 import { getReadingForToday } from './services/bibleData';
 import {
   LayoutDashboard,
@@ -61,6 +62,24 @@ const App: React.FC = () => {
     }
   }, [darkMode]);
 
+  // Sincronização inicial ao carregar o app se estiver logado
+  useEffect(() => {
+    if (currentUser) {
+      syncAdapter.initializeUser();
+    }
+  }, [currentUser]);
+
+  // Sincronização automática periódica (a cada 5 minutos)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const interval = setInterval(() => {
+      syncAdapter.pushUserData();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   // Load daily reading based on current user - PRODUCTION SAFE
   useEffect(() => {
     if (!currentUser) return;
@@ -78,14 +97,18 @@ const App: React.FC = () => {
     }
   }, [currentUser]); // Removed currentView to prevent unnecessary re-runs
 
-  const handleLogin = (userId: string) => {
+  const handleLogin = (userId: string, token?: string) => {
     localStorage.setItem('jw_current_session_user', userId);
+    if (token) {
+      localStorage.setItem('jw_auth_token', token);
+    }
     setCurrentUser(userId);
     setCurrentView(AppView.DASHBOARD);
   };
 
   const handleLogout = () => {
     localStorage.removeItem('jw_current_session_user');
+    localStorage.removeItem('jw_auth_token');
     setCurrentUser(null);
   };
 
@@ -305,13 +328,23 @@ const App: React.FC = () => {
 
         <div className="w-64 p-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
           <button
+            onClick={async () => {
+              const ok = await syncAdapter.pushUserData();
+              if (ok) alert('Dados sincronizados com sucesso!');
+              else alert('Erro ao sincronizar. Verifique sua conexão.');
+            }}
+            className="w-full flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 rounded-lg transition-colors text-sm font-medium mb-2"
+          >
+            <Sun size={16} className="animate-pulse" /> Sincronizar Agora
+          </button>
+          <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors text-sm font-medium mb-4"
           >
             <LogOut size={16} /> Sair da Conta
           </button>
           <p className="text-xs text-center text-gray-400 dark:text-gray-500">
-            Ferramenta de auxílio pessoal.<br />Sempre consulte as publicações oficiais.
+            Dados sincronizados em nuvem.<br />Sempre consulte as publicações oficiais.
           </p>
         </div>
       </aside>
