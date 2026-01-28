@@ -14,6 +14,7 @@ import {
 import { BookOpen, Sparkles, Loader2, CheckSquare, Square, Settings, ChevronUp, Book, Volume2, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import AudioPlayer from './AudioPlayer';
+import { syncAdapter } from '../services/syncAdapter';
 
 interface BibleReadingProps {
   userId?: string;
@@ -166,19 +167,47 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
     }
   };
 
-  const toggleTodayRead = () => {
+  const toggleTodayRead = async () => {
     const newState = !isTodayDone;
+
+    // 1. Marca capítulos no localStorage
     dailyReading.chapters.forEach(cap => {
       markChapterAsRead(cap, newState, userId);
     });
+
+    // 2. Se está marcando como CONCLUÍDO, marca a pérola no backend também
+    if (newState && highlightId) {
+      await handleMarkHighlightRead();
+    }
+
+    // 3. Atualiza estado e busca próxima pérola
     refreshState();
+
+    // 4. Salva o progresso no servidor para outros dispositivos sincronizarem
+    try {
+      await syncAdapter.pushUserData();
+    } catch (e) {
+      console.error("Sync failed:", e);
+    }
+
+    // Após dar o refresh, o dailyReading terá mudado (pois agora é adaptativo).
+    const newReading = getReadingForToday(userId);
+    if (newReading.text) {
+      fetchHighlight(newReading.text);
+    }
   };
 
-  const toggleSingleChapter = (bookName: string, chapterNum: number) => {
+  const toggleSingleChapter = async (bookName: string, chapterNum: number) => {
     const chapterId = `${bookName} ${chapterNum}`;
     const isRead = readChapters.includes(chapterId);
     markChapterAsRead(chapterId, !isRead, userId);
     refreshState();
+
+    try {
+      await syncAdapter.pushUserData();
+    } catch (e) {
+      console.error("Sync failed:", e);
+    }
   };
 
   const handleSaveConfig = () => {
@@ -257,14 +286,6 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
                 {isHighlightRead && <span className="text-[10px] text-green-500 font-bold uppercase mt-1 flex items-center gap-1"><CheckCircle2 size={10} /> Já estudado</span>}
               </div>
               <div className="flex items-center gap-3">
-                {!isHighlightRead && (
-                  <button
-                    onClick={handleMarkHighlightRead}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold transition-all border border-indigo-200 dark:border-indigo-800"
-                  >
-                    <CheckCircle2 size={14} /> Marcar Lida
-                  </button>
-                )}
                 <AudioPlayer
                   text={highlights}
                   label="Ouvir Pérolas"
@@ -328,7 +349,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

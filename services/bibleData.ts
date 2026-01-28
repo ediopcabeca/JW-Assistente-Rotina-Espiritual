@@ -225,20 +225,20 @@ export const getReadingForToday = (userId?: string): {
     const idealChapters = ALL_CHAPTERS.slice(idealStartIndex, idealEndIndex);
     const idealText = formatChapters(idealChapters);
 
-    // Progresso Real
+    // Progresso Real (Primeiro capítulo não lido)
     const firstUnreadIndex = ALL_CHAPTERS.findIndex(c => !readChapters.includes(c));
     const effectiveIndex = firstUnreadIndex === -1 ? TOTAL_CHAPTERS : firstUnreadIndex;
+
+    // Sugere os próximos 3 capítulos (ritmo aproximado para terminar em 1 ano)
+    const adaptiveChapters = ALL_CHAPTERS.slice(effectiveIndex, Math.min(TOTAL_CHAPTERS, effectiveIndex + 3));
+    const adaptiveText = formatChapters(adaptiveChapters);
 
     const isBehind = effectiveIndex < idealStartIndex;
     const isAhead = (effectiveIndex > idealEndIndex) || (firstUnreadIndex === -1);
 
-    // Se estiver atrasado, mostramos o que ele DEVERIA ler hoje para o plano de 1 ano
-    // Se estiver em dia ou adiantado, mostramos a leitura do dia ideal
-    // Mas para o UI, o usuário quer ver o texto do plano de 1 ano colorido
-
     return {
-      text: idealText,
-      chapters: idealChapters,
+      text: adaptiveText,
+      chapters: adaptiveChapters,
       planDay: idealPlanDay,
       isBehind: isBehind,
       isAhead: isAhead,
