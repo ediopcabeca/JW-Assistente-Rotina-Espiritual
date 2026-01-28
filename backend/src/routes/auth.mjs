@@ -5,7 +5,13 @@ import { OAuth2Client } from 'google-auth-library';
 import { pool } from '../config/db.mjs';
 
 const router = express.Router();
+console.log("[INÍCIO] Carregando Rotas de Autenticação...");
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+if (process.env.GOOGLE_CLIENT_ID) {
+    console.log("[INFO] Google Client ID carregado.");
+} else {
+    console.error("[ERRO] Google Client ID ausente!");
+}
 
 // Middleware para validar senha: 6-8 caracteres, alfanumérico
 const validatePassword = (password) => {

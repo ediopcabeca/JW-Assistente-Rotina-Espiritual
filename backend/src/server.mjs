@@ -13,6 +13,18 @@ const PORT = process.env.PORT || 3000;
 // URL do seu frontend na Hostinger
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
 
+// Verificação de Variáveis de Ambiente Críticas
+const REQUIRED_ENV = ['GOOGLE_CLIENT_ID', 'JWT_SECRET', 'DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+console.log("--- Verificando Configurações ---");
+REQUIRED_ENV.forEach(env => {
+    if (!process.env[env]) {
+        console.warn(`[AVISO] Variável ${env} não configurada!`);
+    } else {
+        console.log(`[OK] Variável ${env} detectada.`);
+    }
+});
+console.log("---------------------------------");
+
 // Middlewares
 app.use(express.json());
 
