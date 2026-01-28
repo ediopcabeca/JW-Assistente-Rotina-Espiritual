@@ -2,10 +2,10 @@
     "name": "assistente-rotina-espiritual-backend",
     "version": "1.0.0",
     "type": "module",
-    "main": "src/server.mjs",
+    "main": "server.js",
     "scripts": {
-        "dev": "node src/server.mjs",
-        "start": "NODE_ENV=production node src/server.mjs"
+        "dev": "node server.js",
+        "start": "NODE_ENV=production node server.js"
     },
     "dependencies": {
         "@google/generative-ai": "^0.15.0",

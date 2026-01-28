@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { model } from "./config/gemini.mjs";
+import { model } from "./config/gemini.js";
 
 dotenv.config();
 
