@@ -25,6 +25,7 @@ if (!$ttsKey) {
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 $text = $data['text'] ?? '';
+$speed = floatval($data['speed'] ?? 1.0);
 
 if (empty($text)) {
     http_response_code(400);
@@ -42,12 +43,12 @@ $payload = [
     "input" => ["text" => $cleanText],
     "voice" => [
         "languageCode" => "pt-BR",
-        "name" => "pt-BR-Wavenet-B" // Voz fluida. Se o usuário preferir a Standard (4M free), pode trocar para pt-BR-Standard-A
+        "name" => "pt-BR-Standard-A" // Voz Standard (4 Milhões de caracteres GRÁTIS por mês)
     ],
     "audioConfig" => [
         "audioEncoding" => "MP3",
         "pitch" => 0,
-        "speakingRate" => 1.0
+        "speakingRate" => $speed
     ]
 ];
 

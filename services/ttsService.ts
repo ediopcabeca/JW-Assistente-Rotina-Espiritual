@@ -2,7 +2,7 @@ const API_URL = '/api/tts.php';
 
 let currentAudio: HTMLAudioElement | null = null;
 
-export const speakText = async (text: string): Promise<void> => {
+export const speakText = async (text: string, speed: number = 1.0): Promise<void> => {
     try {
         // Para o áudio atual se houver
         stopSpeaking();
@@ -12,7 +12,7 @@ export const speakText = async (text: string): Promise<void> => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ text }),
+            body: JSON.stringify({ text, speed }),
         });
 
         if (!response.ok) {
