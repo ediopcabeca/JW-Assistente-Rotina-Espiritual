@@ -79,22 +79,27 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
 
   useEffect(() => {
     let interval: any;
+    let lastPullTime = 0;
 
     const init = async () => {
-      // 1. Tenta puxar dados do servidor antes de mostrar qualquer coisa
+      // 1. Tenta puxar dados do servidor ao montar
       if (syncAdapter.isAvailable()) {
         await syncAdapter.pullUserData();
+        lastPullTime = Date.now();
       }
       refreshState();
 
       // 2. Configura pull periódico (a cada 30 segundos)
       interval = setInterval(async () => {
-        if (syncAdapter.isAvailable()) {
+        // Cooldown: se acabamos de fazer uma alteração local ou um push recente,
+        // esperamos um pouco antes de puxar de novo para evitar race condition (sobrescrita por dados antigos)
+        const now = Date.now();
+        if (syncAdapter.isAvailable() && (now - lastPullTime > 30000)) {
           const changed = await syncAdapter.pullUserData();
-          // Se houve mudança (pullUserData retorna true se baixou algo), atualizamos
           if (changed) {
             refreshState();
           }
+          lastPullTime = now;
         }
       }, 30000);
     };
@@ -166,7 +171,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
   const handleAudioGenerated = async (base64: string) => {
     if (!highlightId) return;
     try {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem('jw_auth_token');
       if (!token) return;
 
       // Salva o áudio no banco de dados para evitar gasto futuro de cota

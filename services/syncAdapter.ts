@@ -30,14 +30,32 @@ export const syncAdapter = {
             const { sync_data } = await response.json();
             if (!sync_data) return false;
 
-            // Salva cada chave recebida no LocalStorage
+            // Mesclagem Inteligente (Merge)
             Object.entries(sync_data).forEach(([key, value]) => {
                 if (key.startsWith('jw_')) {
-                    localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+                    const localValueNode = localStorage.getItem(key);
+                    const remoteValueString = typeof value === 'string' ? value : JSON.stringify(value);
+
+                    // 1. Caso especial: Capítulos lidos (Merge de listas para evitar perda)
+                    if (key === 'jw_bible_read_chapters' && localValueNode) {
+                        try {
+                            const localList = JSON.parse(localValueNode) as string[];
+                            const remoteList = JSON.parse(remoteValueString) as string[];
+                            // União das listas (Set remove duplicatas)
+                            const mergedList = Array.from(new Set([...localList, ...remoteList]));
+                            localStorage.setItem(key, JSON.stringify(mergedList));
+                            return;
+                        } catch (e) {
+                            console.error('[SYNC] Falha ao mesclar lista de capítulos:', e);
+                        }
+                    }
+
+                    // 2. Outras chaves: Sobrescrita simples (ou pode-se adicionar mais regras depois)
+                    localStorage.setItem(key, remoteValueString);
                 }
             });
 
-            console.log('[SYNC] Dados sincronizados do servidor com sucesso.');
+            console.log('[SYNC] Dados mesclados do servidor com sucesso.');
             return true;
         } catch (error) {
             console.error('[SYNC] Erro ao puxar dados:', error);
