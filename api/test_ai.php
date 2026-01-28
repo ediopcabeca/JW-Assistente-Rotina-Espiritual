@@ -6,14 +6,29 @@ echo "--- Diagnóstico de Conexão IA ---\n";
 
 $CFG_GEMINI_KEY = getenv('JW_API_GEMINI') ?: getenv('GEMINI_API_KEY') ?: '';
 
-if (file_exists(__DIR__ . '/key.php')) {
-    include_once __DIR__ . '/key.php';
-} elseif (file_exists(__DIR__ . '/config.php')) {
-    include_once __DIR__ . '/config.php';
+// 1. Busca no Banco de Dados
+try {
+    require_once __DIR__ . '/db.php';
+    $stmt = $pdo->prepare("SELECT s_value FROM app_settings WHERE s_key = 'gemini_api_key' LIMIT 1");
+    $stmt->execute();
+    $dbKey = $stmt->fetchColumn();
+    if ($dbKey)
+        $CFG_GEMINI_KEY = $dbKey;
+} catch (Exception $e) {
+    echo "Aviso: Erro ao buscar no banco: " . $e->getMessage() . "\n";
+}
+
+// 2. Fallbacks
+if (empty($CFG_GEMINI_KEY) || $CFG_GEMINI_KEY === 'SUA_CHAVE_AQUI' || $CFG_GEMINI_KEY === 'INSIRA_SUA_NOVA_CHAVE_AQUI') {
+    if (file_exists(__DIR__ . '/key.php')) {
+        include_once __DIR__ . '/key.php';
+    } elseif (file_exists(__DIR__ . '/config.php')) {
+        include_once __DIR__ . '/config.php';
+    }
 }
 
 if (empty($CFG_GEMINI_KEY) || $CFG_GEMINI_KEY === 'SUA_CHAVE_AQUI' || $CFG_GEMINI_KEY === 'INSIRA_SUA_NOVA_CHAVE_AQUI') {
-    echo "ERRO: Chave API não configurada corretamente em key.php ou config.php\n";
+    echo "ERRO: Chave API não configurada corretamente no Banco de Dados, key.php ou config.php\n";
     exit;
 }
 

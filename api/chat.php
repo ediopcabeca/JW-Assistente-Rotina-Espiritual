@@ -4,17 +4,31 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Tenta pegar a chave de várias fontes (prioridade para arquivo local não rastreado)
+// Tenta pegar a chave de várias fontes (prioridade: Banco de Dados > key.php > config.php)
 $aiKey = getenv('JW_API_GEMINI') ?: getenv('GEMINI_API_KEY');
 
-if (file_exists(__DIR__ . '/key.php')) {
-    include_once __DIR__ . '/key.php';
-    if (isset($CFG_GEMINI_KEY))
-        $aiKey = $CFG_GEMINI_KEY;
-} elseif (file_exists(__DIR__ . '/config.php')) {
-    include_once __DIR__ . '/config.php';
-    if (isset($CFG_GEMINI_KEY))
-        $aiKey = $CFG_GEMINI_KEY;
+// 1. Busca no Banco de Dados (Mais persistente)
+try {
+    require_once __DIR__ . '/db.php';
+    $stmt = $pdo->prepare("SELECT s_value FROM app_settings WHERE s_key = 'gemini_api_key' LIMIT 1");
+    $stmt->execute();
+    $dbKey = $stmt->fetchColumn();
+    if ($dbKey)
+        $aiKey = $dbKey;
+} catch (Exception $e) { /* Silencioso se der erro no banco */
+}
+
+// 2. Fallbacks para arquivos
+if (!$aiKey) {
+    if (file_exists(__DIR__ . '/key.php')) {
+        include_once __DIR__ . '/key.php';
+        if (isset($CFG_GEMINI_KEY))
+            $aiKey = $CFG_GEMINI_KEY;
+    } elseif (file_exists(__DIR__ . '/config.php')) {
+        include_once __DIR__ . '/config.php';
+        if (isset($CFG_GEMINI_KEY))
+            $aiKey = $CFG_GEMINI_KEY;
+    }
 }
 
 if (!$aiKey) {
