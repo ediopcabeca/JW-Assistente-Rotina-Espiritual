@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Lock, ArrowRight, Loader2, UserPlus, LogIn, Eye, EyeOff, Users, X, Chrome } from 'lucide-react';
+import { User, Lock, ArrowRight, Loader2, UserPlus, LogIn, Eye, EyeOff, Users, X } from 'lucide-react';
 import { GoogleLogin, GoogleOAuthProvider } from '@react-oauth/google';
 
 interface LoginScreenProps {
@@ -49,7 +49,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       return;
     }
 
-    const userId = email.trim().toLowerCase().replace(/\s+/g, '_');
+    // userId removido pois agora usamos o email diretamente via backend
 
     if (!validatePassword(password)) {
       setError('A senha deve ter de 6 a 8 caracteres e conter letras e números.');
