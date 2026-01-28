@@ -13,7 +13,7 @@ if (!isset($CFG_GEMINI_KEY) || empty($CFG_GEMINI_KEY) || $CFG_GEMINI_KEY === 'SU
 
 echo "Chave API encontrada: " . substr($CFG_GEMINI_KEY, 0, 8) . "...\n";
 
-$url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" . $CFG_GEMINI_KEY;
+$url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" . $CFG_GEMINI_KEY;
 $payload = [
     "contents" => [["parts" => [["text" => "Diga 'Olá Mundo' para testar a conexão."]]]]
 ];
