@@ -12,12 +12,27 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const rootDir = path.resolve(__dirname, "../../");
+
+// Detecta se está sendo chamado da raiz ou de dentro da pasta src
+const isAtRoot = !__dirname.includes('backend');
+const rootDir = isAtRoot ? __dirname : path.resolve(__dirname, "../../");
 const distPath = path.join(rootDir, "dist");
+
+console.log(`[INIT] Root Dir detectado: ${rootDir}`);
+console.log(`[INIT] Dist Path detectado: ${distPath}`);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "*";
+
+// Diagnóstico de Variáveis (Apenas presença, ocultando valores)
+const checkEnv = () => {
+    const vars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'JWT_SECRET', 'JW_API_GEMINI'];
+    console.log("--- Diagnóstico de Ambiente ---");
+    vars.forEach(v => console.log(`${v}: ${process.env[v] ? 'DEFINIDO' : 'AUSENTE'}`));
+    console.log("-------------------------------");
+};
+checkEnv();
 
 // 1. Middlewares
 app.use(express.json());
