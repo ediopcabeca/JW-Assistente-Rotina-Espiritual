@@ -1,44 +1,50 @@
-import React, { useState } from 'react';
-import { Play, Square, Loader2, Volume2 } from 'lucide-react';
-import { speakText, stopSpeaking } from '../services/ttsService';
+import React, { useState, useEffect } from 'react';
+import { Play, Square, Loader2, Volume2, Pause } from 'lucide-react';
+import { speakText, stopSpeaking, pauseSpeaking, isSpeaking } from '../services/ttsService';
 
 interface AudioPlayerProps {
     text: string;
     label?: string;
 }
 
+type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'paused';
+
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ text, label = "Ouvir Conteúdo" }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState<PlaybackStatus>('idle');
     const [speed, setSpeed] = useState(1.0);
 
     const handlePlay = async () => {
         if (!text) return;
 
-        setIsLoading(true);
+        setStatus('loading');
         try {
             await speakText(text, speed);
-            setIsPlaying(true);
+            setStatus('playing');
         } catch (error) {
             alert("Houve um erro ao gerar a voz. Verifique sua chave de API do Google Cloud.");
-        } finally {
-            setIsLoading(false);
+            setStatus('idle');
         }
+    };
+
+    const handlePause = () => {
+        pauseSpeaking();
+        setStatus('paused');
     };
 
     const handleStop = () => {
         stopSpeaking();
-        setIsPlaying(false);
+        setStatus('idle');
     };
 
     return (
         <div className="flex items-center gap-2">
+            {/* Seletor de Velocidade */}
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5 border border-gray-200 dark:border-gray-600">
                 <select
                     value={speed}
                     onChange={(e) => setSpeed(parseFloat(e.target.value))}
                     className="bg-transparent text-[10px] font-bold text-gray-600 dark:text-gray-300 outline-none px-1 cursor-pointer"
-                    disabled={isLoading || isPlaying}
+                    disabled={status === 'loading' || status === 'playing' || status === 'paused'}
                     title="Velocidade de leitura"
                 >
                     <option value="0.75">0.75x</option>
@@ -49,22 +55,35 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ text, label = "Ouvir Conteúd
                 </select>
             </div>
 
-            {!isPlaying ? (
+            {/* Botão Play/Pause */}
+            {status === 'idle' || status === 'paused' ? (
                 <button
                     onClick={handlePlay}
-                    disabled={isLoading || !text}
+                    disabled={status === 'loading' || !text}
                     className="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-bold transition-all disabled:opacity-50"
                 >
-                    {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Volume2 size={14} />}
-                    {isLoading ? "Gerando..." : label}
+                    {status === 'loading' ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
+                    {status === 'loading' ? "Gerando..." : status === 'paused' ? "Retomar" : label}
                 </button>
             ) : (
                 <button
+                    onClick={handlePause}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all"
+                >
+                    <Pause size={14} />
+                    Pausar
+                </button>
+            )}
+
+            {/* Botão Parar (Reset) */}
+            {(status === 'playing' || status === 'paused') && (
+                <button
                     onClick={handleStop}
                     className="flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-all"
+                    title="Parar e voltar ao início"
                 >
                     <Square size={14} />
-                    Parar
+                    Sair
                 </button>
             )}
         </div>

@@ -1,10 +1,20 @@
 const API_URL = '/api/tts.php';
 
 let currentAudio: HTMLAudioElement | null = null;
+let currentText: string | null = null;
+let currentSpeed: number = 1.0;
 
 export const speakText = async (text: string, speed: number = 1.0): Promise<void> => {
     try {
-        // Para o áudio atual se houver
+        // Se for o mesmo texto e velocidade, e estiver pausado, apenas retoma
+        if (currentAudio && currentText === text && currentSpeed === speed) {
+            if (currentAudio.paused) {
+                await currentAudio.play();
+                return;
+            }
+        }
+
+        // Caso contrário, para o anterior e gera um novo
         stopSpeaking();
 
         const response = await fetch(API_URL, {
@@ -25,14 +35,26 @@ export const speakText = async (text: string, speed: number = 1.0): Promise<void
             throw new Error('Conteúdo de áudio não recebido.');
         }
 
-        // Cria o áudio a partir do Base64 retornado pelo Google
         const audioSrc = `data:audio/mp3;base64,${data.audioContent}`;
         currentAudio = new Audio(audioSrc);
+        currentText = text;
+        currentSpeed = speed;
 
         await currentAudio.play();
+
+        currentAudio.onended = () => {
+            currentAudio = null;
+            currentText = null;
+        };
     } catch (error) {
         console.error('Erro no TTS:', error);
         throw error;
+    }
+};
+
+export const pauseSpeaking = () => {
+    if (currentAudio && !currentAudio.paused) {
+        currentAudio.pause();
     }
 };
 
@@ -41,6 +63,7 @@ export const stopSpeaking = () => {
         currentAudio.pause();
         currentAudio.currentTime = 0;
         currentAudio = null;
+        currentText = null;
     }
 };
 

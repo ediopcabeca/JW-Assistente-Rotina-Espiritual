@@ -35,7 +35,14 @@ if (empty($text)) {
 
 // Limpa o texto de tags Markdown para a leitura ficar mais fluida
 $cleanText = strip_tags($text); // Remove HTML se houver
-$cleanText = preg_replace('/[*_#`]/', '', $cleanText); // Remove símbolos markdown comuns
+
+// Normaliza referências bíblicas (Ex: 31:7-9 para 31 versículos 7 a 9)
+// 1. Converte "Capitulo:Versiculo" para "Capitulo versículo Versiculo"
+$cleanText = preg_replace('/(\d+):(\d+)/', '$1 versículo $2', $cleanText);
+// 2. Converte o hífen de intervalo para " a "
+$cleanText = preg_replace('/(\d+)-(\d+)/', '$1 a $2', $cleanText);
+
+$cleanText = preg_replace('/[*_#`]/', '', $cleanText); // Remove símbolos markdown restantes
 
 $url = "https://texttospeech.googleapis.com/v1/text:synthesize?key=" . $ttsKey;
 
