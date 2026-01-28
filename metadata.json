@@ -1,7 +1,0 @@
-{
-  "name": "JW Assistente Rotina Espiritual",
-  "description": "Assistente para organização de estudos, ministério, leitura bíblica e preparação de discursos para NotebookLM.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}
