@@ -72,7 +72,7 @@ export const generateStudySchedule = async (
         },
       },
     });
-    return JSON.parse(text) as ScheduleItem[];
+    return extractJSON(text) as ScheduleItem[];
   } catch (error) {
     console.error("Error generating schedule:", error);
     return [];
@@ -157,6 +157,34 @@ export const generateIllustration = async (
   }
 };
 
+const extractJSON = (text: string) => {
+  try {
+    // Tenta parse direto
+    return JSON.parse(text);
+  } catch (e) {
+    // Se falhar, tenta extrair o que está entre ```json e ```
+    const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (match && match[1]) {
+      try {
+        return JSON.parse(match[1]);
+      } catch (e2) {
+        console.error("Failed to parse extracted JSON:", e2);
+      }
+    }
+    // Tenta achar o primeiro { e o último }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      try {
+        return JSON.parse(text.substring(firstBrace, lastBrace + 1));
+      } catch (e3) {
+        console.error("Failed to parse braced JSON:", e3);
+      }
+    }
+    throw new Error("Could not find valid JSON in AI response");
+  }
+};
+
 export const generateDiscoursePreparation = async (
   material: string,
   scriptures: string,
@@ -209,11 +237,11 @@ export const generateDiscoursePreparation = async (
         },
       },
     });
-    return JSON.parse(text);
+    return extractJSON(text);
   } catch (error) {
     console.error("Error generating discourse prep:", error);
     return {
-      fullText: "Erro ao gerar o texto completo.",
+      fullText: "Erro ao gerar o texto completo. Verifique se o material não é muito curto ou tente novamente.",
       summary: "Erro ao gerar o resumo."
     };
   }

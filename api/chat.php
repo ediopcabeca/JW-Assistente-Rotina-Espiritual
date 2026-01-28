@@ -49,21 +49,22 @@ if (isset($data['contents'])) {
 
     // Adiciona configurações opcionais se existirem
     if (isset($data['config'])) {
+        // Mapeia instruções do sistema (REST usa system_instruction)
         if (isset($data['config']['systemInstruction'])) {
-            $geminiPayload['systemInstruction'] = ["parts" => [["text" => $data['config']['systemInstruction']]]];
+            $geminiPayload['system_instruction'] = ["parts" => [["text" => $data['config']['systemInstruction']]]];
         }
 
-        // Mapeia configurações de geração
+        // Mapeia configurações de geração (REST usa snake_case em v1)
         $genConfig = [];
         if (isset($data['config']['responseMimeType'])) {
-            $genConfig['responseMimeType'] = $data['config']['responseMimeType'];
+            $genConfig['response_mime_type'] = $data['config']['responseMimeType'];
         }
         if (isset($data['config']['responseSchema'])) {
-            $genConfig['responseSchema'] = $data['config']['responseSchema'];
+            $genConfig['response_schema'] = $data['config']['responseSchema'];
         }
 
         if (!empty($genConfig)) {
-            $geminiPayload['generationConfig'] = $genConfig;
+            $geminiPayload['generation_config'] = $genConfig;
         }
     }
 } else {
@@ -83,7 +84,7 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($geminiPayload));
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-curl_setopt($ch, CURLOPT_TIMEOUT, 60); // Aumentado para 60s para discursos longos
+curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -92,7 +93,6 @@ curl_close($ch);
 
 if ($httpCode !== 200) {
     http_response_code($httpCode ?: 500);
-    // Tenta decodificar o erro do Gemini para ser informativo
     $errorBody = json_decode($response, true);
     if (isset($errorBody['error']['message'])) {
         echo json_encode(["error" => "Gemini API: " . $errorBody['error']['message']]);
@@ -102,6 +102,13 @@ if ($httpCode !== 200) {
 } else {
     $resData = json_decode($response, true);
     $text = $resData['candidates'][0]['content']['parts'][0]['text'] ?? 'Erro ao processar resposta da IA.';
+
+    // Limpeza Proativa: Se a IA retornar blocos de código Markdown (```json ... ```), removemos
+    // Isso garante que o frontend receba um JSON limpo para o JSON.parse()
+    if (preg_match('/^```(?:json)?\s*([\s\S]*?)\s*```$/i', trim($text), $matches)) {
+        $text = $matches[1];
+    }
+
     echo json_encode(["reply" => $text]);
 }
 ?>
