@@ -24,7 +24,9 @@ import {
   BrainCircuit,
   PanelLeftClose,
   PanelLeft,
-  Palette
+  Palette,
+  BookOpen,
+  Search
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -178,8 +180,13 @@ const App: React.FC = () => {
               <DashboardCard
                 title="Estudo Profundo"
                 description="Gere perguntas parágrafo por parágrafo para publicações."
-                icon={<BrainCircuit size={32} className="text-purple-600 dark:text-purple-400" />}
-                color="bg-purple-50 hover:bg-purple-100 border-purple-200 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 dark:border-purple-800"
+                icon={
+                  <div className="relative">
+                    <BookOpen size={32} className="text-purple-600 dark:text-purple-400" />
+                    <Search size={16} className="absolute -bottom-1 -right-1 text-purple-700 dark:text-purple-300 bg-white dark:bg-gray-800 rounded-full" />
+                  </div>
+                }
+                color="bg-purple-50 hover:bg-purple-100 border-purple-200 dark:bg-purple-900/20 dark:hover:bg-indigo-900/30 dark:border-purple-800"
                 onClick={() => setCurrentView(AppView.STUDY_QUESTIONS)}
               />
               <DashboardCard
@@ -319,7 +326,16 @@ const App: React.FC = () => {
             <NavItem view={AppView.DASHBOARD} label="Início" icon={<LayoutDashboard size={20} />} />
             <NavItem view={AppView.ILLUSTRATIONS} label="INSTRUA" icon={<Palette size={20} />} />
             <NavItem view={AppView.SCHEDULE} label="Cronograma" icon={<CalendarDays size={20} />} />
-            <NavItem view={AppView.STUDY_QUESTIONS} label="Estudo Profundo" icon={<BrainCircuit size={20} />} />
+            <NavItem
+              view={AppView.STUDY_QUESTIONS}
+              label="Estudo Profundo"
+              icon={
+                <div className="relative">
+                  <BookOpen size={20} />
+                  <Search size={10} className="absolute -bottom-0.5 -right-0.5" />
+                </div>
+              }
+            />
             <NavItem view={AppView.MINISTRY} label="Ministério" icon={<Briefcase size={20} />} />
             <NavItem view={AppView.BIBLE} label="Leitura Bíblica" icon={<Book size={20} />} />
             <NavItem view={AppView.TRANSCRIPTION} label="NotebookLM Prep" icon={<FileText size={20} />} />
