@@ -4,10 +4,16 @@ header("Content-Type: text/plain; charset=UTF-8");
 
 echo "--- Diagnóstico de Conexão IA ---\n";
 
-include_once __DIR__ . '/config.php';
+$CFG_GEMINI_KEY = getenv('JW_API_GEMINI') ?: getenv('GEMINI_API_KEY') ?: '';
 
-if (!isset($CFG_GEMINI_KEY) || empty($CFG_GEMINI_KEY) || $CFG_GEMINI_KEY === 'SUA_CHAVE_AQUI') {
-    echo "ERRO: Chave API não configurada corretamente em config.php\n";
+if (file_exists(__DIR__ . '/key.php')) {
+    include_once __DIR__ . '/key.php';
+} elseif (file_exists(__DIR__ . '/config.php')) {
+    include_once __DIR__ . '/config.php';
+}
+
+if (empty($CFG_GEMINI_KEY) || $CFG_GEMINI_KEY === 'SUA_CHAVE_AQUI' || $CFG_GEMINI_KEY === 'INSIRA_SUA_NOVA_CHAVE_AQUI') {
+    echo "ERRO: Chave API não configurada corretamente em key.php ou config.php\n";
     exit;
 }
 

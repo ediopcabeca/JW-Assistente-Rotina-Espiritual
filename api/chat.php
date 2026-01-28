@@ -4,10 +4,14 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-// Tenta pegar a chave do config.php ou do env
+// Tenta pegar a chave de várias fontes (prioridade para arquivo local não rastreado)
 $aiKey = getenv('JW_API_GEMINI') ?: getenv('GEMINI_API_KEY');
 
-if (file_exists(__DIR__ . '/config.php')) {
+if (file_exists(__DIR__ . '/key.php')) {
+    include_once __DIR__ . '/key.php';
+    if (isset($CFG_GEMINI_KEY))
+        $aiKey = $CFG_GEMINI_KEY;
+} elseif (file_exists(__DIR__ . '/config.php')) {
     include_once __DIR__ . '/config.php';
     if (isset($CFG_GEMINI_KEY))
         $aiKey = $CFG_GEMINI_KEY;

@@ -8,6 +8,4 @@ $CFG_DB_USER = 'u875922357_admin';
 $CFG_DB_PASS = 'Mp07gp24';
 
 $CFG_JWT_SECRET = 'jw_segredo_espiritual_2026';
-
-$CFG_GEMINI_KEY = 'INSIRA_SUA_NOVA_CHAVE_AQUI';
 ?>
