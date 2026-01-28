@@ -49,8 +49,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     }
 
     try {
-      // Usamos paths relativos para o PHP
-      const endpoint = isRegistering ? '/api/auth.php?action=register' : '/api/auth.php?action=login';
+      // Usamos paths relativos para o PHP (ajustado para ser mais robusto)
+      const endpoint = isRegistering ? 'api/auth.php?action=register' : 'api/auth.php?action=login';
 
       console.log(`[AUTH] Chamando: ${endpoint}`);
 
@@ -86,11 +86,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         console.error(`[AUTH ERRO] Status ${response.status}. Resposta não-JSON:`, text.substring(0, 100));
 
         if (response.status === 404) {
-          throw new Error('Erro 404: Rota de registro não encontrada no servidor. Verifique se o Node.js está rodando a versão mais recente.');
+          throw new Error('Erro 404: O arquivo da API não foi encontrado. Verifique se a pasta "api" está no servidor.');
         } else if (response.status === 500) {
-          throw new Error('Erro 500: Erro interno no servidor. Verifique os logs na Hostinger ou a conexão com o Banco de Dados.');
+          throw new Error('Erro 500: Erro interno no PHP. Verifique a conexão com o Banco de Dados no painel da Hostinger.');
         } else {
-          throw new Error(`Erro ${response.status}: O servidor retornou HTML em vez de JSON. Verifique as rotas do backend.`);
+          throw new Error(`Erro ${response.status}: O servidor não respondeu como esperado. Verifique o arquivo .htaccess ou as rotas.`);
         }
       }
     } catch (err: any) {

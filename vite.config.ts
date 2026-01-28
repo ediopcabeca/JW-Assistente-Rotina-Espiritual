@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
         targets: [
           { src: 'manifest.json', dest: '.' },
           { src: 'sw.js', dest: '.' },
-          { src: 'icon.png', dest: '.' }
+          { src: 'icon.png', dest: '.' },
+          { src: 'api/*', dest: 'api' }
         ]
       })
     ],
