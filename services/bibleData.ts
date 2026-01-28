@@ -68,7 +68,7 @@ export const BIBLE_BOOKS = [
 ];
 
 // Flat list of all 1189 chapters for easy calculation
-export const ALL_CHAPTERS: string[] = BIBLE_BOOKS.flatMap(book => 
+export const ALL_CHAPTERS: string[] = BIBLE_BOOKS.flatMap(book =>
   Array.from({ length: book.chapters }, (_, i) => `${book.name} ${i + 1}`)
 );
 
@@ -121,7 +121,7 @@ export const getStartDate = (userId?: string): Date => {
     // Default to Jan 1st of current year if not set
     return new Date(new Date().getFullYear(), 0, 1);
   } catch (e) {
-     return new Date();
+    return new Date();
   }
 };
 
@@ -177,64 +177,82 @@ export const getProgressPercentage = (userId?: string): number => {
   }
 };
 
+// --- Helper to format ranges ---
+export const formatChapters = (chapters: string[]): string => {
+  if (chapters.length === 0) return "";
+  const groups: Record<string, number[]> = {};
+  chapters.forEach(cap => {
+    const lastSpace = cap.lastIndexOf(' ');
+    const book = cap.substring(0, lastSpace);
+    const num = parseInt(cap.substring(lastSpace + 1));
+    if (!groups[book]) groups[book] = [];
+    groups[book].push(num);
+  });
+
+  return Object.entries(groups).map(([book, nums]) => {
+    if (nums.length === 1) return `${book} ${nums[0]}`;
+    return `${book} ${nums[0]}-${nums[nums.length - 1]}`;
+  }).join('; ');
+};
+
 // --- SAFE MAIN LOGIC ---
 
-export const getReadingForToday = (userId?: string): { text: string; chapters: string[]; indexStart: number; indexEnd: number; planDay: number } => {
+export const getReadingForToday = (userId?: string): {
+  text: string;
+  chapters: string[];
+  planDay: number;
+  isBehind: boolean;
+  isAhead: boolean;
+  idealText: string;
+} => {
   try {
-    // Logic updated: Suggest NEXT unread block of chapters
     const readChapters = getReadChapters(userId);
-    
-    // Find first unread chapter index
-    let firstUnreadIndex = ALL_CHAPTERS.findIndex(c => !readChapters.includes(c));
-    if (firstUnreadIndex === -1) {
-        // All read?
-        if (readChapters.length === TOTAL_CHAPTERS) {
-            return { text: "Leitura Completa!", chapters: [], indexStart: 0, indexEnd: 0, planDay: 365 };
-        }
-        firstUnreadIndex = 0; // Fallback
-    }
+    const startDate = getStartDate(userId);
 
-    // Suggest approx 4 chapters to keep pace
-    const batchSize = 4;
-    const startIndex = firstUnreadIndex;
-    const endIndex = Math.min(startIndex + batchSize, TOTAL_CHAPTERS);
-    
-    const todaysChapters = ALL_CHAPTERS.slice(startIndex, endIndex);
-    
-    // Calculate Plan Day based on progress
-    const planDay = Math.floor(startIndex / CHAPTERS_PER_DAY) + 1;
+    // Calcula o dia ideal do plano (1 a 365)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const baseStart = new Date(startDate);
+    baseStart.setHours(0, 0, 0, 0);
 
-    // Format text like "Gênesis 1-3" or "Gênesis 50; Êxodo 1-2"
-    const groups: Record<string, number[]> = {};
-    todaysChapters.forEach(cap => {
-      const lastSpace = cap.lastIndexOf(' ');
-      const book = cap.substring(0, lastSpace);
-      const num = parseInt(cap.substring(lastSpace + 1));
-      if (!groups[book]) groups[book] = [];
-      groups[book].push(num);
-    });
+    const diffTime = today.getTime() - baseStart.getTime();
+    const elapsedDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    const idealPlanDay = Math.min(365, elapsedDays + 1);
 
-    const formattedParts = Object.entries(groups).map(([book, nums]) => {
-      if (nums.length === 1) return `${book} ${nums[0]}`;
-      return `${book} ${nums[0]}-${nums[nums.length - 1]}`;
-    });
+    // Índices ideais (onde o usuário DEVERIA estar)
+    const idealStartIndex = Math.floor((idealPlanDay - 1) * CHAPTERS_PER_DAY);
+    const idealEndIndex = Math.min(TOTAL_CHAPTERS, Math.floor(idealPlanDay * CHAPTERS_PER_DAY));
+    const idealChapters = ALL_CHAPTERS.slice(idealStartIndex, idealEndIndex);
+    const idealText = formatChapters(idealChapters);
+
+    // Progresso Real
+    const firstUnreadIndex = ALL_CHAPTERS.findIndex(c => !readChapters.includes(c));
+    const effectiveIndex = firstUnreadIndex === -1 ? TOTAL_CHAPTERS : firstUnreadIndex;
+
+    const isBehind = effectiveIndex < idealStartIndex;
+    const isAhead = (effectiveIndex > idealEndIndex) || (firstUnreadIndex === -1);
+
+    // Se estiver atrasado, mostramos o que ele DEVERIA ler hoje para o plano de 1 ano
+    // Se estiver em dia ou adiantado, mostramos a leitura do dia ideal
+    // Mas para o UI, o usuário quer ver o texto do plano de 1 ano colorido
 
     return {
-      text: formattedParts.join('; '),
-      chapters: todaysChapters,
-      indexStart: startIndex,
-      indexEnd: endIndex,
-      planDay: planDay
+      text: idealText,
+      chapters: idealChapters,
+      planDay: idealPlanDay,
+      isBehind: isBehind,
+      isAhead: isAhead,
+      idealText: idealText
     };
   } catch (e) {
     console.error("Critical error in getReadingForToday:", e);
-    // Return safe fallback to prevent app crash
     return {
       text: "Leitura do Dia",
       chapters: [],
-      indexStart: 0,
-      indexEnd: 0,
-      planDay: 0
+      planDay: 1,
+      isBehind: false,
+      isAhead: false,
+      idealText: ""
     };
   }
 };
