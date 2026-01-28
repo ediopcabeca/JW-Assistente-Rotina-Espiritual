@@ -11,8 +11,9 @@ import {
   BIBLE_BOOKS,
   getReadChapters
 } from '../services/bibleData';
-import { BookOpen, Sparkles, Loader2, CheckSquare, Square, Settings, ChevronUp, Book } from 'lucide-react';
+import { BookOpen, Sparkles, Loader2, CheckSquare, Square, Settings, ChevronUp, Book, Volume2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import AudioPlayer from './AudioPlayer';
 
 interface BibleReadingProps {
   userId?: string;
@@ -141,6 +142,10 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
 
         {highlights && (
           <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-indigo-50/30 dark:bg-indigo-900/10">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Tesouros Espirituais</h3>
+              <AudioPlayer text={highlights} label="Ouvir Pérolas" />
+            </div>
             <div className="prose prose-indigo dark:prose-invert max-w-none">
               <ReactMarkdown
                 components={{

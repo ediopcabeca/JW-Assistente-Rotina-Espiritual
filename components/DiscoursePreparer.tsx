@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { generateDiscoursePreparation } from '../services/geminiService';
-import { Loader2, ArrowRight, BookOpen, Clock, FileText, ClipboardList } from 'lucide-react';
+import { Loader2, ArrowRight, BookOpen, Clock, FileText, ClipboardList, Volume2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import AudioPlayer from './AudioPlayer';
 
 const DiscoursePreparer: React.FC = () => {
     const [material, setMaterial] = useState('');
@@ -110,6 +111,9 @@ const DiscoursePreparer: React.FC = () => {
                         >
                             ESBOÇO PARA TRIBUNA
                         </button>
+                        <div className="ml-4 border-l border-slate-800 pl-4 flex items-center">
+                            <AudioPlayer text={activeTab === 'treino' ? result.fullText : result.summary} label="Ouvir Conteúdo" />
+                        </div>
                     </div>
 
                     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-inner min-h-[400px]">

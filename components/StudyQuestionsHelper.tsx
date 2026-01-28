@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { generateDeepStudyQuestions } from '../services/geminiService';
-import { BookOpen, Search, Loader2, Sparkles, Clipboard, Check } from 'lucide-react';
+import { BookOpen, Search, Loader2, Sparkles, Clipboard, Check, Volume2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import AudioPlayer from './AudioPlayer';
 
 const StudyQuestionsHelper: React.FC = () => {
   const [inputText, setInputText] = useState('');
@@ -93,6 +94,7 @@ const StudyQuestionsHelper: React.FC = () => {
                   {copied ? <Check size={14} /> : <Clipboard size={14} />}
                   {copied ? 'Copiado!' : 'Copiar'}
                 </button>
+                <AudioPlayer text={result} label="Ouvir Análise" />
               </div>
 
               <div className="prose prose-purple dark:prose-invert max-w-none bg-purple-50 dark:bg-purple-900/10 p-6 rounded-xl border border-purple-100 dark:border-purple-800/50">
