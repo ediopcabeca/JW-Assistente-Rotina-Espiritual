@@ -89,10 +89,10 @@ export const generateMinistryTips = async (
     Forneça:
     1. Um texto bíblico principal para ler.
     2. Uma ilustração ou comparação simples para explicar o ponto.
-    3. Uma pergunta para deixar em aberto para a próxima visita.
-    
     Use formatação Markdown clara.
-    Escreva de forma direta e instrutiva. Não use frases como "sob a perspectiva das Testemunhas de Jeová" ou similar, pois o contexto já é implícito.
+    Escreva de forma direta e instrutiva. Não use frases como "sob a perspectiva das Testemunhas de Jeová" ou similar.
+    
+    REGRA DE OURO: Todas as referências bíblicas devem estar em **negrito** (ex: **2 Timóteo 3:16**).
 
     DIRETRIZES DE IDIOMA (CRÍTICO):
     - Responda em Português Brasileiro (pt-BR) com acentuação correta.
@@ -231,7 +231,9 @@ export const generateBibleHighlights = async (
     2. **Lições Práticas:** Como esses princípios se aplicam ao nosso dia a dia?
     3. **O Reino de Deus:** De que forma os textos fortalecem nossa confiança no Reino?
     
-    Escreva de forma direta e afirmativa, como se estivéssemos estudando juntos. Evite frases como "sob a perspectiva de" ou "para as Testemunhas de Jeová", pois o foco deve ser o ensino bíblico puro.
+    REGRAS DE OURO (MUITO IMPORTANTE):
+    - **Citações Bíblicas**: Para CADA ponto mencionado, você DEVE incluir a referência bíblica específica (Capítulo e Versículo) em **negrito** (ex: **Gênesis 30:22**).
+    - **Estilo**: Escreva de forma direta e afirmativa. Evite frases como "sob a perspectiva de" ou "para as Testemunhas de Jeová".
     
     DIRETRIZES DE IDIOMA (CRÍTICO):
     - Responda em Português Brasileiro (pt-BR) com acentuação correta.
