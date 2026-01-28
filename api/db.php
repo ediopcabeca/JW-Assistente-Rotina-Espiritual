@@ -53,6 +53,7 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(191) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_data (user_id INT PRIMARY KEY, sync_data LONGTEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS app_settings (s_key VARCHAR(50) PRIMARY KEY, s_value TEXT) ENGINE=InnoDB;");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS bible_highlights (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, chapters VARCHAR(255) NOT NULL, content TEXT NOT NULL, audio_content LONGTEXT, is_read TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(user_id, chapters), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
 
 } catch (PDOException $e) {
     header("Content-Type: application/json");

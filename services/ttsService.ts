@@ -4,38 +4,54 @@ let currentAudio: HTMLAudioElement | null = null;
 let currentText: string | null = null;
 let currentSpeed: number = 1.0;
 
-export const speakText = async (text: string, speed: number = 1.0): Promise<void> => {
+export const speakText = async (
+    text: string,
+    speed: number = 1.0,
+    preGeneratedAudio?: string
+): Promise<string | null> => {
     try {
         // Se for o mesmo texto e velocidade, e estiver pausado, apenas retoma
         if (currentAudio && currentText === text && currentSpeed === speed) {
             if (currentAudio.paused) {
                 await currentAudio.play();
-                return;
+                return null;
             }
         }
 
-        // Caso contrário, para o anterior e gera um novo
+        // Caso contrário, para o anterior
         stopSpeaking();
 
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text, speed }),
-        });
+        let audioSrc = '';
+        let audioContent: string | null = null;
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Erro ao gerar voz.');
+        if (preGeneratedAudio) {
+            // Usa o áudio já carregado do Banco de Dados
+            audioSrc = `data:audio/mp3;base64,${preGeneratedAudio}`;
+            audioContent = preGeneratedAudio;
+        } else {
+            // Chama a API para gerar novo áudio
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text, speed }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Erro ao gerar voz.');
+            }
+
+            const data = await response.json();
+            if (!data.audioContent) {
+                throw new Error('Conteúdo de áudio não recebido.');
+            }
+
+            audioContent = data.audioContent;
+            audioSrc = `data:audio/mp3;base64,${audioContent}`;
         }
 
-        const data = await response.json();
-        if (!data.audioContent) {
-            throw new Error('Conteúdo de áudio não recebido.');
-        }
-
-        const audioSrc = `data:audio/mp3;base64,${data.audioContent}`;
         currentAudio = new Audio(audioSrc);
         currentText = text;
         currentSpeed = speed;
@@ -46,6 +62,8 @@ export const speakText = async (text: string, speed: number = 1.0): Promise<void
             currentAudio = null;
             currentText = null;
         };
+
+        return audioContent; // Retorna o base64 para o componente salvar se quiser
     } catch (error) {
         console.error('Erro no TTS:', error);
         throw error;

@@ -11,7 +11,7 @@ import {
   BIBLE_BOOKS,
   getReadChapters
 } from '../services/bibleData';
-import { BookOpen, Sparkles, Loader2, CheckSquare, Square, Settings, ChevronUp, Book, Volume2 } from 'lucide-react';
+import { BookOpen, Sparkles, Loader2, CheckSquare, Square, Settings, ChevronUp, Book, Volume2, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import AudioPlayer from './AudioPlayer';
 
@@ -22,6 +22,9 @@ interface BibleReadingProps {
 const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
   const [loading, setLoading] = useState(false);
   const [highlights, setHighlights] = useState('');
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const [isHighlightRead, setIsHighlightRead] = useState(false);
+  const [cachedAudio, setCachedAudio] = useState<string | null>(null);
 
   const [showConfig, setShowConfig] = useState(false);
   const [startDateInput, setStartDateInput] = useState('');
@@ -43,18 +46,124 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
     setReadChapters(getReadChapters(userId));
   };
 
+  const fetchHighlight = async (chaptersToUse: string, forceShow: boolean = false) => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      const res = await fetch(`/api/highlights.php?chapters=${encodeURIComponent(chaptersToUse)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (data.id) {
+        setHighlightId(data.id);
+        setHighlights(data.content);
+        setIsHighlightRead(data.is_read === 1 || data.is_read === "1");
+        setCachedAudio(data.audio_content);
+
+        // Se já leu e não é forceShow, vamos esconder para manter a tela limpa
+        if (!forceShow && (data.is_read === 1 || data.is_read === "1")) {
+          setHighlights('');
+        }
+      } else {
+        setHighlights('');
+        setHighlightId(null);
+        setCachedAudio(null);
+      }
+    } catch (e) {
+      console.error("Error fetching highlight:", e);
+    }
+  };
+
   useEffect(() => {
     refreshState();
     setHighlights('');
+    setCachedAudio(null);
     setSelectedBook(null);
+
+    // Busca pérola persistente para a leitura de hoje
+    const reading = getReadingForToday(userId);
+    if (reading.text) {
+      fetchHighlight(reading.text);
+    }
   }, [userId]);
 
   const handleGenerate = async (chaptersToUse: string) => {
     if (!chaptersToUse) return;
     setLoading(true);
-    const result = await generateBibleHighlights(chaptersToUse);
-    setHighlights(result);
-    setLoading(false);
+    try {
+      const result = await generateBibleHighlights(chaptersToUse);
+      setHighlights(result);
+
+      // Salva no Backend para sincronizar
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        const res = await fetch('/api/highlights.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ chapters: chaptersToUse, content: result })
+        });
+        const data = await res.json();
+        if (data.id) setHighlightId(data.id);
+      }
+    } catch (e) {
+      console.error("Error generating/saving highlights:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkHighlightRead = async () => {
+    if (!highlightId) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      await fetch('/api/highlights.php', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ id: highlightId })
+      });
+
+      setIsHighlightRead(true);
+      setHighlights(''); // Esconde após ler conforme solicitado
+    } catch (e) {
+      console.error("Error marking highlight as read:", e);
+    }
+  };
+
+  const handleAudioGenerated = async (base64: string) => {
+    if (!highlightId) return;
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      // Salva o áudio no banco de dados para evitar gasto futuro de cota
+      await fetch('/api/highlights.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        // Re-envia o conteúdo existente com o áudio novo
+        body: JSON.stringify({
+          id: highlightId, // O backend precisará ser ajustado para UPDATE se ID for enviado
+          chapters: dailyReading.text,
+          content: highlights,
+          audio_content: base64
+        })
+      });
+      setCachedAudio(base64);
+    } catch (e) {
+      console.error("Error saving cached audio:", e);
+    }
   };
 
   const toggleTodayRead = () => {
@@ -143,8 +252,26 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
         {highlights && (
           <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-indigo-50/30 dark:bg-indigo-900/10">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Tesouros Espirituais</h3>
-              <AudioPlayer text={highlights} label="Ouvir Pérolas" />
+              <div className="flex flex-col">
+                <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest">Tesouros Espirituais</h3>
+                {isHighlightRead && <span className="text-[10px] text-green-500 font-bold uppercase mt-1 flex items-center gap-1"><CheckCircle2 size={10} /> Já estudado</span>}
+              </div>
+              <div className="flex items-center gap-3">
+                {!isHighlightRead && (
+                  <button
+                    onClick={handleMarkHighlightRead}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-600 dark:text-indigo-400 rounded-lg text-xs font-bold transition-all border border-indigo-200 dark:border-indigo-800"
+                  >
+                    <CheckCircle2 size={14} /> Marcar Lida
+                  </button>
+                )}
+                <AudioPlayer
+                  text={highlights}
+                  label="Ouvir Pérolas"
+                  cachedAudio={cachedAudio}
+                  onAudioGenerated={handleAudioGenerated}
+                />
+              </div>
             </div>
             <div className="prose prose-indigo dark:prose-invert max-w-none">
               <ReactMarkdown
@@ -187,7 +314,11 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
                 {Array.from({ length: BIBLE_BOOKS.find(b => b.name === selectedBook)?.chapters || 0 }, (_, i) => i + 1).map(num => {
                   const isRead = readChapters.includes(`${selectedBook} ${num}`);
                   return (
-                    <button key={num} onClick={() => toggleSingleChapter(selectedBook, num)} className={`h-10 w-full rounded-lg font-bold text-sm transition-all ${isRead ? 'bg-green-500 text-white' : 'bg-white dark:bg-gray-800 border border-gray-200 text-gray-600 dark:text-gray-400'}`}>
+                    <button key={num} onClick={() => {
+                      toggleSingleChapter(selectedBook, num);
+                      // Ao clicar em um capítulo específico, tenta buscar a pérola se existir (Archive)
+                      fetchHighlight(`${selectedBook} ${num}`, true);
+                    }} className={`h-10 w-full rounded-lg font-bold text-sm transition-all ${isRead ? 'bg-green-500 text-white' : 'bg-white dark:bg-gray-800 border border-gray-200 text-gray-600 dark:text-gray-400'}`}>
                       {num}
                     </button>
                   );
