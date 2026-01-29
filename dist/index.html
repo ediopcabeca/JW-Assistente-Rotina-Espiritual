@@ -45,7 +45,7 @@
   }
 }
 </script>
-  <script type="module" crossorigin src="/assets/index-DaHgYJ2p.js"></script>
+  <script type="module" crossorigin src="/assets/index-D8o9jMrM.js"></script>
   <link rel="stylesheet" crossorigin href="/assets/index-CcMkX69P.css">
 </head>
 
@@ -53,12 +53,11 @@
 
   <div id="root"></div>
   <script>
-    // Service Worker removed to force update
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function (registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('SW Registered', reg))
+          .catch(err => console.log('SW registration failed', err));
       });
     }
   </script>
