@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { generateStudySchedule } from '../services/geminiService';
 import { ScheduleItem } from '../types';
-import { Calendar, Loader2, CheckCircle2, Circle, Bell, BellRing, Clock, Mic, Square } from 'lucide-react';
+import { Calendar, Loader2, CheckCircle2, Circle, Bell, BellRing, Clock, Mic, Square, RefreshCw } from 'lucide-react';
+import { syncAdapter } from '../services/syncAdapter';
 
 const STORAGE_KEY_SCHEDULE = 'jw_schedule_data';
 const STORAGE_KEY_CONFIG = 'jw_schedule_config';
@@ -58,24 +59,36 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   const notificationTimeouts = useRef<number[]>([]);
 
   useEffect(() => {
-    const savedConfig = localStorage.getItem(getKey(STORAGE_KEY_CONFIG));
-    if (savedConfig) {
-      const parsed = JSON.parse(savedConfig);
-      setProfile(parsed.profile);
-      setTimeAvailable(parsed.timeAvailable);
-      if (parsed.weekStartDate) setWeekStartDate(parsed.weekStartDate);
-    } else {
-      setProfile('');
-      setTimeAvailable('');
-      const today = new Date();
-      const day = today.getDay();
-      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-      const monday = new Date(today.setDate(diff));
-      setWeekStartDate(monday.toISOString().split('T')[0]);
-    }
+    const initData = async () => {
+      if (userId && syncAdapter.isAvailable()) {
+        try {
+          await syncAdapter.pullUserData();
+        } catch (e) {
+          console.error('[SYNC] Falha ao sincronizar na inicialização:', e);
+        }
+      }
 
-    const savedSchedule = localStorage.getItem(getKey(STORAGE_KEY_SCHEDULE));
-    setSchedule(savedSchedule ? JSON.parse(savedSchedule) : null);
+      const savedConfig = localStorage.getItem(getKey(STORAGE_KEY_CONFIG));
+      if (savedConfig) {
+        const parsed = JSON.parse(savedConfig);
+        setProfile(parsed.profile);
+        setTimeAvailable(parsed.timeAvailable);
+        if (parsed.weekStartDate) setWeekStartDate(parsed.weekStartDate);
+      } else {
+        setProfile('');
+        setTimeAvailable('');
+        const today = new Date();
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(today.setDate(diff));
+        setWeekStartDate(monday.toISOString().split('T')[0]);
+      }
+
+      const savedSchedule = localStorage.getItem(getKey(STORAGE_KEY_SCHEDULE));
+      setSchedule(savedSchedule ? JSON.parse(savedSchedule) : null);
+    };
+
+    initData();
   }, [userId]);
 
   useEffect(() => {
@@ -188,8 +201,12 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
               icon: '/icon.png',
               tag: `jw-notification-${index}`,
               badge: '/icon.png',
-              vibrate: [200, 100, 200]
-            });
+              vibrate: [200, 100, 200],
+              actions: [
+                { action: 'open_app', title: 'Ver no App' },
+                { action: 'snooze_1h', title: 'Adiar 1h' }
+              ]
+            } as any);
           });
         } else {
           new Notification(`Lembrete JW: ${item.activity}`, {
