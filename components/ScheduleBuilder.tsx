@@ -94,11 +94,13 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   useEffect(() => {
     const configData = { profile, timeAvailable, weekStartDate };
     localStorage.setItem(getKey(STORAGE_KEY_CONFIG), JSON.stringify(configData));
+    if (userId) syncAdapter.pushUserData();
   }, [profile, timeAvailable, weekStartDate, userId]);
 
   useEffect(() => {
     if (schedule) {
       localStorage.setItem(getKey(STORAGE_KEY_SCHEDULE), JSON.stringify(schedule));
+      if (userId) syncAdapter.pushUserData();
       notificationTimeouts.current.forEach((id) => window.clearTimeout(id));
       notificationTimeouts.current = [];
       schedule.forEach((item, index) => {
@@ -194,28 +196,43 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     if (timeUntil > 0 && timeUntil < 2147483647) {
       console.log(`Notificação agendada para ${item.activity} em ${timeUntil}ms`);
       const timeoutId = window.setTimeout(() => {
-        if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-          navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification(`Lembrete JW: ${item.activity}`, {
-              body: item.focus,
-              icon: '/icon.png',
-              tag: `jw-notification-${index}`,
-              badge: '/icon.png',
-              vibrate: [200, 100, 200],
-              actions: [
-                { action: 'open_app', title: 'Ver no App' },
-                { action: 'snooze_1h', title: 'Adiar 1h' }
-              ]
-            } as any);
-          });
-        } else {
-          new Notification(`Lembrete JW: ${item.activity}`, {
-            body: item.focus,
-            tag: `jw-notification-${index}`
-          });
-        }
+        sendNotification(`Lembrete JW: ${item.activity}`, item.focus, index);
       }, timeUntil);
       notificationTimeouts.current.push(timeoutId);
+    }
+  };
+
+  const sendNotification = (title: string, body: string, index: number = 0) => {
+    if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification(title, {
+          body: body,
+          icon: '/icon.png',
+          tag: `jw-notification-${index}`,
+          badge: '/icon.png',
+          vibrate: [200, 100, 200],
+          actions: [
+            { action: 'open_app', title: 'Ver no App' },
+            { action: 'snooze_1h', title: 'Adiar 1h' }
+          ]
+        } as any);
+      });
+    } else if (Notification.permission === 'granted') {
+      new Notification(title, { body, tag: `jw-notification-${index}` });
+    } else {
+      console.warn('Permissão de notificação não concedida ou Service Worker não disponível.');
+    }
+  };
+
+  const handleTestNotification = async () => {
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      alert('Aguarde 5 segundos para o aviso de teste...');
+      setTimeout(() => {
+        sendNotification('Teste de Aviso JW', 'Seu sistema de notificações está funcionando perfeitamente! 🎉');
+      }, 5000);
+    } else {
+      alert('Você precisa dar permissão para receber notificações.');
     }
   };
 
@@ -284,14 +301,45 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-8">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-            <Calendar size={24} />
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+              <Calendar size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Organizador Semanal</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Crie uma rotina equilibrada para suas atividades espirituais.</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Organizador Semanal</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Crie uma rotina equilibrada para suas atividades espirituais.</p>
-          </div>
+
+          {userId && (
+            <button
+              onClick={async () => {
+                const btn = document.getElementById('sync-btn-icon');
+                if (btn) btn.classList.add('animate-spin');
+                try {
+                  await syncAdapter.pullUserData();
+                  // Re-load state from local storage
+                  const savedConfig = localStorage.getItem(getKey(STORAGE_KEY_CONFIG));
+                  if (savedConfig) {
+                    const parsed = JSON.parse(savedConfig);
+                    setProfile(parsed.profile);
+                    setTimeAvailable(parsed.timeAvailable);
+                    if (parsed.weekStartDate) setWeekStartDate(parsed.weekStartDate);
+                  }
+                  const savedSchedule = localStorage.getItem(getKey(STORAGE_KEY_SCHEDULE));
+                  setSchedule(savedSchedule ? JSON.parse(savedSchedule) : null);
+                  alert('Sincronização concluída!');
+                } finally {
+                  if (btn) btn.classList.remove('animate-spin');
+                }
+              }}
+              className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+              title="Sincronizar dados agora"
+            >
+              <RefreshCw id="sync-btn-icon" size={20} />
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -344,13 +392,23 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
           </div>
         </div>
 
-        <button
-          onClick={handleGenerate}
-          disabled={loading || !profile || !timeAvailable}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
-        >
-          {loading ? <Loader2 className="animate-spin" size={20} /> : <span>Gerar Cronograma</span>}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button
+            onClick={handleGenerate}
+            disabled={loading || !profile || !timeAvailable}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50"
+          >
+            {loading ? <Loader2 className="animate-spin" size={20} /> : <span>Gerar Cronograma</span>}
+          </button>
+
+          <button
+            onClick={handleTestNotification}
+            className="sm:w-auto bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 shadow-sm"
+          >
+            <Bell size={18} />
+            <span>Testar Aviso</span>
+          </button>
+        </div>
       </div>
 
       {schedule && (
