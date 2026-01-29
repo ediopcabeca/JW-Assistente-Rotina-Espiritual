@@ -218,15 +218,16 @@ const DiscoursePreparer: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-inner min-h-[400px]">
-                        <div className="prose prose-invert prose-indigo max-w-none">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-inner min-h-[400px]">
+                        <div className="prose prose-indigo dark:prose-invert max-w-none">
                             <ReactMarkdown
                                 components={{
-                                    h3: ({ node, ...props }) => <h3 className="text-xl font-black text-indigo-400 flex items-center gap-2 mb-4 border-b border-slate-800 pb-2" {...props} />,
-                                    p: ({ node, ...props }) => <p className="text-gray-300 dark:text-gray-100 leading-relaxed text-lg" {...props} />,
-                                    strong: ({ node, ...props }) => <strong className="text-white font-bold bg-indigo-900/30 px-1 rounded" {...props} />,
-                                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 text-gray-300 dark:text-gray-100" {...props} />,
+                                    h3: ({ node, ...props }) => <h3 className="text-xl font-black text-indigo-600 dark:text-indigo-400 flex items-center gap-2 mb-4 border-b border-slate-200 dark:border-slate-800 pb-2" {...props} />,
+                                    p: ({ node, ...props }) => <p className="text-gray-800 dark:text-gray-100 leading-relaxed text-lg" {...props} />,
+                                    strong: ({ node, ...props }) => <strong className="text-indigo-900 dark:text-white font-bold bg-indigo-100 dark:bg-indigo-900/50 px-1 rounded text-lg" {...props} />,
+                                    ul: ({ node, ...props }) => <ul className="list-disc pl-5 space-y-2 text-gray-800 dark:text-gray-100" {...props} />,
                                     li: ({ node, ...props }) => <li className="mb-2" {...props} />,
+                                    blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-indigo-500 pl-4 py-2 my-4 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-800 dark:text-indigo-200 italic rounded-r-lg" {...props} />,
                                 }}
                             >
                                 {activeTab === 'treino' ? result.fullText : result.summary}
