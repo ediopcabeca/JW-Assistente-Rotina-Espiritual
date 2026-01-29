@@ -215,7 +215,7 @@ export const generateDiscoursePreparation = async (
          * Introdução: Force o uso da Lição 1 (Comece Bem).
          * Texto Bíblico: Force Lições 4, 5 e 6 (Introdução, Leitura, Explicação). Ex: "> [TREINO - LIÇÃO 6]: Destaque a palavra-chave 'amor' ao ler."
          * Perguntas: Se houver, cite Lição 3.
-         * Ilustrações: Cite Lição 17.
+         * ILUSTRAÇÕES (OBRIGATÓRIO): Se o campo 'Recursos' ou 'Material' contiver uma ilustração, história ou exemplo, você É OBRIGADO a incluí-la no corpo do discurso usando a Lição 17. Não ignore o material do usuário.
          * Conclusão: Force Lição 20.
        - GUIA VOCAL: Adicione marcações de (Pausa), (Ênfase), (Acelerar) baseadas nas Lições 8, 9, 10 e 11.
     
