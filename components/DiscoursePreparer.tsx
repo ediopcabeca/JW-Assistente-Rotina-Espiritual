@@ -94,34 +94,67 @@ const DiscoursePreparer: React.FC = () => {
         const element = document.getElementById('discourse-content');
         if (!element) return;
 
-        const opt = {
-            margin: 10,
-            filename: `discurso_${activeTab}.pdf`,
-            image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-        };
-
-        // Temporariamente força estilo claro para o PDF
+        // Forçar remoção do modo escuro no elemento raiz para garantir que o Tailwind mude as classes
         const isDark = document.documentElement.classList.contains('dark');
         if (isDark) {
             document.documentElement.classList.remove('dark');
         }
 
         const originalClass = element.className;
-        element.className = "p-8 text-black bg-white";
+        // Forçamos explicitamente o fundo branco e texto preto no elemento
+        element.style.backgroundColor = 'white';
+        element.style.color = 'black';
+        element.className = "p-8 text-black bg-white pdf-export";
 
-        html2pdf().from(element).set(opt).save().then(() => {
-            element.className = originalClass;
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-            }
-        }).catch((err: any) => {
-            console.error("PDF generation error:", err);
-            if (isDark) {
-                document.documentElement.classList.add('dark');
-            }
-        });
+        const opt = {
+            margin: 10,
+            filename: `discurso_${activeTab}.pdf`,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                letterRendering: true,
+                onclone: (clonedDoc: Document) => {
+                    // Garantia tripla no documento clonado
+                    const clonedHtml = clonedDoc.documentElement;
+                    clonedHtml.classList.remove('dark');
+                    clonedHtml.style.backgroundColor = 'white';
+                    clonedHtml.style.color = 'black';
+
+                    const clonedElement = clonedDoc.getElementById('discourse-content');
+                    if (clonedElement) {
+                        clonedElement.style.backgroundColor = 'white';
+                        clonedElement.style.color = 'black';
+                        // Remove qualquer classe dark interna que possa ter sido clonada
+                        const darkElements = clonedElement.querySelectorAll('.dark');
+                        darkElements.forEach(el => el.classList.remove('dark'));
+                    }
+                }
+            },
+            jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+        };
+
+        // Pequeno delay para garantir que o navegador processou a remoção da classe 'dark' antes do snapshot
+        setTimeout(() => {
+            html2pdf().from(element).set(opt).save().then(() => {
+                // Restaurar estado original
+                element.className = originalClass;
+                element.style.backgroundColor = '';
+                element.style.color = '';
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                }
+            }).catch((err: any) => {
+                console.error("PDF generation error:", err);
+                element.className = originalClass;
+                element.style.backgroundColor = '';
+                element.style.color = '';
+                if (isDark) {
+                    document.documentElement.classList.add('dark');
+                }
+            });
+        }, 150);
     };
 
     const handleDownloadWord = () => {

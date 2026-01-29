@@ -220,13 +220,13 @@ export const generateDiscoursePreparation = async (
        - GUIA VOCAL: Adicione marcações de (Pausa), (Ênfase), (Acelerar) baseadas nas Lições 8, 9, 10 e 11.
     
     2. summary (AGORA SERÁ O "ESBOÇO EXPANDIDO PARA TRIBUNA"):
-       - OBJETIVO: Segurança total. Um guia que ativa a memória através de CONTEÚDO, não instruções.
+       - OBJETIVO: Segurança total. Um guia que ativa a memória através de CONTEÚDO PURO, não instruções.
        - TEMPO OBRIGATÓRIO: Ao lado de cada título de seção, coloque o tempo (Ex: "1. A Criação (3 min)").
        - ESTRUTURA OBRIGATÓRIA PARA CADA PONTO PRINCIPAL:
          1. [RESUMO DE MEMÓRIA]: Um parágrafo DENSO de 4 a 6 linhas que contém a argumentação REAL, os fatos e o ensino do ponto. 
-            * PROIBIÇÃO CRÍTICA: NUNCA use frases como "O orador deve...", "Explique que...", "Destaque a importância de...". 
-            * FORMA CORRETA: O texto deve ser escrito de forma afirmativa (Ex: "A hipocrisia de Israel era visível em seus sacrifícios vazios. Jeová abomina adoração sem amor...") ou em primeira pessoa do plural (Ex: "Precisamos examinar nosso coração para não cairmos na armadilha dos fariseus...").
-            * O objetivo é que ao ler este parágrafo, o orador lembre instantaneamente de toda a pesquisa que ele fez no "Guia de Treinamento".
+            * PROIBIÇÃO ABSOLUTA: NÃO use verbos no imperativo (Ex: "Comece", "Destaque", "Explique"). NÃO use dicas de oratória. NÃO use orientações sobre como o orador deve agir.
+            * REGRA DE OURO: Se o texto parecer uma "orientação", ele está errado. Deve parecer o "texto base" do que será dito, mas em resumo.
+            * FORMA CORRETA: Use apenas afirmações doutrinais ou primeira pessoa do plural (Ex: "A hipocrisia de Israel era visível em seus sacrifícios vazios. Jeová abomina adoração sem amor...") ou (Ex: "Nós precisamos examinar nosso coração para não cairmos na armadilha dos fariseus...").
          2. [TEXTOS BÍBLICOS] (Se houver):
             * [Antes]: Gancho de conexão (Por que ler?).
             * [Leitura]: Referência em negrito (Ex: **João 3:16**).
