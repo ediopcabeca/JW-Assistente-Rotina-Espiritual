@@ -157,6 +157,41 @@ export const generateIllustration = async (
   }
 };
 
+export const suggestMethodology = async (
+  basis: string,
+  audience: string,
+  goal: string
+): Promise<string> => {
+  const prompt = `
+    Atue como um Mentor de Oratória Teocrática especializado na metodologia de ensino de Jesus.
+    
+    Analise os seguintes dados e sugira qual o Padrão de Linguagem (Metodologia) mais adequado para criar uma ilustração impactante.
+    
+    DADOS:
+    - Ponto Bíblico: ${basis}
+    - Assistência: ${audience}
+    - Objetivo: ${goal}
+    
+    OPÇÕES DISPONÍVEIS:
+    - Parábola (História baseada no cotidiano)
+    - Metáfora (Comparação direta e rápida)
+    - Choque (Contraste forte ou paradoxo)
+    - Maiêutica (Uso de perguntas que levam à descoberta)
+    - Aforismo (Sentença curta e memorável)
+    
+    REGRA DE RESPOSTA:
+    Retorne APENAS o nome exato de uma das opções acima (exatamente como escrito na lista).
+  `;
+
+  try {
+    const text = await callAIProxy({ prompt });
+    return text?.trim() || "Automático";
+  } catch (error) {
+    console.error("Error suggesting methodology:", error);
+    return "Automático";
+  }
+};
+
 const extractJSON = (text: string) => {
   if (!text) throw new Error("A resposta da IA está vazia.");
 
