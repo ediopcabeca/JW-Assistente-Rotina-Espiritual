@@ -205,13 +205,13 @@ const DiscoursePreparer: React.FC = () => {
                             onClick={() => setActiveTab('treino')}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'treino' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            TEXTO PARA TREINO
+                            GUIA DE TREINAMENTO (MENTORIA)
                         </button>
                         <button
                             onClick={() => setActiveTab('tribuna')}
                             className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'tribuna' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
                         >
-                            ESBOÇO PARA TRIBUNA
+                            ESBOÇO LIMPO (TRIBUNA)
                         </button>
                         <div className="ml-4 border-l border-slate-800 pl-4 flex items-center">
                             <AudioPlayer text={activeTab === 'treino' ? result.fullText : result.summary} label="Ouvir Conteúdo" />

@@ -194,34 +194,41 @@ export const generateDiscoursePreparation = async (
   resources: string
 ): Promise<{ fullText: string; summary: string }> => {
   const prompt = `
-    Atue como um instrutor de oratória bíblica experiente para as Testemunhas de Jeová.
-    O objetivo é preparar um orador para um discurso ou parte na tribuna.
+    ATUAÇÃO: Mentor de Oratória e Especialista em Preparação de Discursos (Teocráticos).
+    CONTEXTO: Baseie-se ESTRITAMENTE na metodologia da brochura "Aprimore sua Leitura e seu Ensino" (th).
     
-    DADOS FORNECIDOS:
-    - Material de Referência: ${material}
-    - Textos Bíblicos Principais: ${scriptures}
-    - Tempo Disponível: ${time} minutos
-    - Recursos Didáticos (Ilustrações/Exemplos): ${resources}
+    OBJETIVO:
+    Criar um esboço de treinamento que não apenas forneça o conteúdo, mas ensine o orador A COMO FAZER, inserindo "Notas de Treinamento" baseadas nas 20 lições da brochura th.
     
-    GERI DOIS RESULTADOS DISTINTOS (MARKDOWN):
-
-    RESULTADO 1: "INTEGRA DO DISCURSO (TREINO)"
-    - Escreva o texto completo, palavra por palavra, do que o orador deve dizer.
-    - O texto deve ser natural, conversacional e caber EXATAMENTE no tempo de ${time} minutos (ritmo médio de 130 palavras por minuto).
-    - Inclua as leituras dos textos bíblicos e as aplicações das ilustrações solicitadas.
-    - Use tom de autoridade, mas amoroso e instrutivo.
-    - IMPORTANTE: Não use a expressão "sob a perspectiva das Testemunhas de Jeová" ou similares. Fale diretamente para a assistência como um instrutor qualificado.
-
-    RESULTADO 2: "ESBOÇO DE LEMBRETE (TRIBUNA)"
-    - Crie um resumo visualmente limpo com apenas palavras-chave e pontos de destaque.
-    - Destaque os versículos bíblicos em **negrito**.
-    - Inclua marcações de tempo estimadas para cada seção.
-    - Este material deve servir apenas como consulta rápida durante a palestra.
-
-    DIRETRIZES DE IDIOMA:
-    - Português Brasileiro (pt-BR) com acentuação correta.
+    DADOS DE ENTRADA:
+    - Tema/Material: ${material}
+    - Textos Bíblicos: ${scriptures}
+    - Tempo: ${time} minutos
+    - Recursos: ${resources}
     
-    Retorne a resposta no formato JSON com as chaves "fullText" e "summary".
+    ESTRUTURA DE RESPOSTA DESEJADA (JSON):
+    
+    1. fullText (AGORA SERÁ O "GUIA DE TREINAMENTO COM MENTORIA"):
+       - Deve conter o esboço estruturado (Introd, Pontos, Conclusão).
+       - IN-LINE MENTORSHIP: Dentro do texto, insira blocos de instrução visualmente destacados (use blockquotes >) para aplicar as lições.
+       - REGRAS DURAIS DE MAPEAMENTO:
+         * Introdução: Force o uso da Lição 1 (Comece Bem).
+         * Texto Bíblico: Force Lições 4, 5 e 6 (Introdução, Leitura, Explicação). Ex: "> [TREINO - LIÇÃO 6]: Destaque a palavra-chave 'amor' ao ler."
+         * Perguntas: Se houver, cite Lição 3.
+         * Ilustrações: Cite Lição 17.
+         * Conclusão: Force Lição 20.
+       - GUIA VOCAL: Adicione marcações de (Pausa), (Ênfase), (Acelerar) baseadas nas Lições 8, 9, 10 e 11.
+    
+    2. summary (AGORA SERÁ O "ESBOÇO LIMPO PARA TRIBUNA"):
+       - Apenas o esqueleto lógico para levar à tribuna.
+       - Sem as notas de mentoria.
+       - Com textos bíblicos em negrito e marcações de tempo.
+    
+    TOM DE VOZ:
+    - Encorajador, Simples, Focado no Coração (Lição 19).
+    - Use Português Brasileiro coloquial culto.
+    
+    Retorne JSON: { "fullText": "Markdown...", "summary": "Markdown..." }
   `;
 
   try {
