@@ -1,4 +1,4 @@
-// sw.js - v1.0.4 (Notification Actions & Sync)
+// sw.js - v1.0.5 (Force Deployment Update)
 const CACHE_NAME = 'jw-assistant-v2';
 
 self.addEventListener('install', (event) => {
