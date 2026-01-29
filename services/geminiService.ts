@@ -219,10 +219,14 @@ export const generateDiscoursePreparation = async (
          * Conclusão: Force Lição 20.
        - GUIA VOCAL: Adicione marcações de (Pausa), (Ênfase), (Acelerar) baseadas nas Lições 8, 9, 10 e 11.
     
-    2. summary (AGORA SERÁ O "ESBOÇO LIMPO PARA TRIBUNA"):
-       - Apenas o esqueleto lógico para levar à tribuna.
-       - Sem as notas de mentoria.
-       - Com textos bíblicos em negrito e marcações de tempo.
+    2. summary (AGORA SERÁ O "ESBOÇO EXPANDIDO PARA TRIBUNA"):
+       - NÃO FAÇA APENAS TÓPICOS. O orador precisa de segurança.
+       - Use frases completas para as ideias principais (Skeleton Sentence).
+       - PARA CADA TEXTO BÍBLICO, VOCÊ DEVE INCLUIR:
+         * [Antes]: Uma frase de introdução ao texto (Por que vamos ler?).
+         * [Texto]: A citação em **negrito**.
+         * [Depois]: A aplicação direta (O que aprendemos?).
+       - Mantenha visualmente limpo, com espaçamento, mas com conteúdo suficiente para que o orador bata o olho e lembre de toda a argumentação.
     
     TOM DE VOZ:
     - Encorajador, Simples, Focado no Coração (Lição 19).
