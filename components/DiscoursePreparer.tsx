@@ -103,11 +103,24 @@ const DiscoursePreparer: React.FC = () => {
         };
 
         // Temporariamente força estilo claro para o PDF
+        const isDark = document.documentElement.classList.contains('dark');
+        if (isDark) {
+            document.documentElement.classList.remove('dark');
+        }
+
         const originalClass = element.className;
         element.className = "p-8 text-black bg-white";
 
         html2pdf().from(element).set(opt).save().then(() => {
             element.className = originalClass;
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            }
+        }).catch((err: any) => {
+            console.error("PDF generation error:", err);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            }
         });
     };
 
