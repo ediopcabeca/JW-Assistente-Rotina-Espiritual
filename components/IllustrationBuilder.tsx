@@ -1,16 +1,46 @@
 import React, { useState } from 'react';
-import { Sparkles, Loader2, ArrowRight, Home, Lightbulb, Zap, HelpCircle, PenTool, Image as ImageIcon, Mic2, Wand2 } from 'lucide-react';
+import { Sparkles, Loader2, ArrowRight, Home, Lightbulb, Zap, HelpCircle, PenTool, Image as ImageIcon, Mic2, Wand2, Info } from 'lucide-react';
 import { generateIllustration, suggestMethodology } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown';
 import DiscoursePreparer from './DiscoursePreparer';
 
 const methodologies = [
-    { id: 'Automático', icon: <Sparkles size={18} />, label: 'Automático' },
-    { id: 'Parábola', icon: <Home size={18} />, label: 'Parábola' },
-    { id: 'Metáfora', icon: <Lightbulb size={18} />, label: 'Metáfora' },
-    { id: 'Choque', icon: <Zap size={18} />, label: 'Choque' },
-    { id: 'Maiêutica', icon: <HelpCircle size={18} />, label: 'Maiêutica' },
-    { id: 'Aforismo', icon: <PenTool size={18} />, label: 'Aforismo' },
+    {
+        id: 'Automático',
+        icon: <Sparkles size={18} />,
+        label: 'Automático',
+        description: 'A IA analisa seu tema, assistência e objetivo para escolher a técnica mais eficaz automaticamente.'
+    },
+    {
+        id: 'Parábola',
+        icon: <Home size={18} />,
+        label: 'Parábola',
+        description: 'Uma história curta do cotidiano para ensinar uma verdade profunda. Excelente para gerar empatia.'
+    },
+    {
+        id: 'Metáfora',
+        icon: <Lightbulb size={18} />,
+        label: 'Metáfora',
+        description: 'Uma comparação direta ("X é como Y"). Transfere características conhecidas para algo novo de forma rápida.'
+    },
+    {
+        id: 'Choque',
+        icon: <Zap size={18} />,
+        label: 'Choque',
+        description: 'Uso de contrastes fortes ou situações inesperadas para combater a apatia e despertar a mente.'
+    },
+    {
+        id: 'Maiêutica',
+        icon: <HelpCircle size={18} />,
+        label: 'Maiêutica',
+        description: 'Uso de perguntas que levam o ouvinte a descobrir a verdade sozinho, aumentando a convicção pessoal.'
+    },
+    {
+        id: 'Aforismo',
+        icon: <PenTool size={18} />,
+        label: 'Aforismo',
+        description: 'Uma frase curta, densa e memorável que resume o ponto central. Ideal para fixar o ensino.'
+    },
 ];
 
 const IllustrationBuilder: React.FC = () => {
@@ -163,7 +193,18 @@ const IllustrationBuilder: React.FC = () => {
                                                     `}
                                                 >
                                                     <span className={methodology === m.id ? 'text-blue-400' : 'text-gray-600'}>{m.icon}</span>
-                                                    <span className="text-sm font-semibold">{m.label}</span>
+                                                    <span className="text-sm font-semibold flex-1 text-left">{m.label}</span>
+
+                                                    {/* Tooltip Info Icon */}
+                                                    <div className="group/info relative">
+                                                        <Info size={14} className="text-gray-600 hover:text-blue-400 cursor-help transition-colors" />
+                                                        <div className="absolute bottom-full right-0 mb-2 w-48 p-3 bg-black border border-slate-700 rounded-xl text-[10px] text-gray-300 leading-relaxed shadow-2xl opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 pointer-events-none">
+                                                            <div className="font-bold text-blue-400 mb-1 uppercase tracking-tighter">{m.label}</div>
+                                                            {m.description}
+                                                            <div className="absolute top-full right-2 border-8 border-transparent border-t-black"></div>
+                                                        </div>
+                                                    </div>
+
                                                     {isSuggested && (
                                                         <span className="absolute -top-2 -right-1 bg-blue-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter">Indicado</span>
                                                     )}
