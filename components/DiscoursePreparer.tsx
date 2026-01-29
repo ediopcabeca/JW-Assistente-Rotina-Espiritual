@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { generateDiscoursePreparation } from '../services/geminiService';
-import { Loader2, ArrowRight, BookOpen, Clock, FileText, ClipboardList, Trash2, History, Mic2 } from 'lucide-react';
+import { Loader2, ArrowRight, BookOpen, Clock, FileText, ClipboardList, Trash2, History, Mic2, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import AudioPlayer from './AudioPlayer';
+import { saveAs } from 'file-saver';
+import html2pdf from 'html2pdf.js';
 
 const DiscoursePreparer: React.FC = () => {
     const [material, setMaterial] = useState('');
@@ -86,6 +88,50 @@ const DiscoursePreparer: React.FC = () => {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         fetchHistory();
+    };
+
+    const handleDownloadPDF = () => {
+        const element = document.getElementById('discourse-content');
+        if (!element) return;
+
+        const opt = {
+            margin: 10,
+            filename: `discurso_${activeTab}.pdf`,
+            image: { type: 'jpeg' as const, quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
+        };
+
+        // Temporariamente força estilo claro para o PDF
+        const originalClass = element.className;
+        element.className = "p-8 text-black bg-white";
+
+        html2pdf().from(element).set(opt).save().then(() => {
+            element.className = originalClass;
+        });
+    };
+
+    const handleDownloadWord = () => {
+        if (!result) return;
+        const content = activeTab === 'treino' ? result.fullText : result.summary;
+
+        // Convert Markdown to simple HTML structure for Word
+        // Note: proper markdown parsing to HTML is done via ReactMarkdown in UI, 
+        // here we do a simple construction or we can grab the HTML from the DOM.
+        // Grabbing from DOM is safer for consistency.
+        const element = document.getElementById('discourse-content');
+        if (!element) return;
+
+        const htmlContent = element.innerHTML;
+
+        const preHtml = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Discurso</title></head><body>";
+        const postHtml = "</body></html>";
+
+        const blob = new Blob(['\ufeff', preHtml, htmlContent, postHtml], {
+            type: 'application/msword'
+        });
+
+        saveAs(blob, `discurso_${activeTab}.doc`);
     };
 
     return (
@@ -213,12 +259,20 @@ const DiscoursePreparer: React.FC = () => {
                         >
                             ESBOÇO LIMPO (TRIBUNA)
                         </button>
-                        <div className="ml-4 border-l border-slate-800 pl-4 flex items-center">
-                            <AudioPlayer text={activeTab === 'treino' ? result.fullText : result.summary} label="Ouvir Conteúdo" />
+                        <div className="ml-4 border-l border-slate-800 pl-4 flex items-center gap-2">
+                            <AudioPlayer text={activeTab === 'treino' ? result.fullText : result.summary} label="" />
+                            <div className="flex gap-1">
+                                <button onClick={handleDownloadPDF} className="p-2 text-indigo-400 hover:bg-slate-800 rounded-lg hover:text-white transition-all" title="Baixar PDF">
+                                    <Download size={18} />
+                                </button>
+                                <button onClick={handleDownloadWord} className="p-2 text-blue-400 hover:bg-slate-800 rounded-lg hover:text-white transition-all" title="Baixar Word">
+                                    <FileText size={18} />
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-inner min-h-[400px] text-gray-800 dark:text-gray-100">
+                    <div id="discourse-content" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 shadow-inner min-h-[400px] text-gray-800 dark:text-gray-100">
                         <div className="prose prose-indigo dark:prose-invert max-w-none">
                             <ReactMarkdown
                                 components={{
