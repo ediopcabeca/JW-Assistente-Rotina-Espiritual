@@ -220,17 +220,15 @@ export const generateDiscoursePreparation = async (
        - GUIA VOCAL: Adicione marcações de (Pausa), (Ênfase), (Acelerar) baseadas nas Lições 8, 9, 10 e 11.
     
     2. summary (AGORA SERÁ O "ESBOÇO EXPANDIDO PARA TRIBUNA"):
-       - OBJETIVO: Um guia de memória robusto, não um esqueleto anoréxico.
-       - NÃO TRANSCREVA TEXTOS BÍBLICOS: Coloque APENAS a referência (Ex: **João 3:16**).
-       - ESTRUTURA PARA TEXTOS BÍBLICOS (OBRIGATÓRIA):
-         * [Antes]: Gancho de introdução (O que buscar no texto).
-         * [Leitura]: Apenas a referência em negrito.
-         * [Depois]: A aplicação explicada (Raciocínio lógico).
-       - ESTRUTURA PARA PONTOS SEM TEXTO:
-         * NÃO use apenas "Tópico: O Amor". 
-         * USE FRASES DE MEMÓRIA: Ex: "O amor deve ser demonstrado por ações, assim como o Samaritano fez, e não apenas por palavras."
-         * O orador deve ler a frase e se lembrar de todo o parágrafo. Resuma o argumento, não o título.
-       - FORMATO: Visualmente limpo, espaçado, fácil de ler na tribuna.
+       - OBJETIVO: Segurança total. Um guia que ativa a memória.
+       - TEMPO OBRIGATÓRIO: Ao lado de cada título de seção, coloque o tempo (Ex: "1. A Criação (3 min)").
+       - ESTRUTURA OBRIGATÓRIA PARA CADA PONTO PRINCIPAL:
+         1. [RESUMO DE MEMÓRIA]: Um parágrafo DENSO de 3 a 4 linhas que resume toda a argumentação daquele ponto. O orador deve ler isso e lembrar de tudo o que estudou. NÃO USE TÓPICOS AQUI, USE TEXTO CORRIDO.
+         2. [TEXTOS BÍBLICOS] (Se houver):
+            * [Antes]: Gancho de conexão (Por que ler?).
+            * [Leitura]: Referência em negrito (Ex: **João 3:16**).
+            * [Depois]: Aplicação prática e conexão com a próxima ideia.
+       - FORMATO: Use espaçamento para separar os pontos. Visualmente limpo, mas conteudista.
     
     TOM DE VOZ:
     - Encorajador, Simples, Focado no Coração (Lição 19).
