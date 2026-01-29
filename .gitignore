@@ -1,5 +1,5 @@
 api/key.php
 node_modules
-dist
+
 .env
 api/config.php

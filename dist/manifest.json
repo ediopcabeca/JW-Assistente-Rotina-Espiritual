@@ -1,0 +1,20 @@
+{
+  "short_name": "Assistente",
+  "name": "JW Assistente",
+  "icons": [
+    {
+      "src": "icon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#5a3696",
+  "display": "standalone",
+  "theme_color": "#5a3696"
+}
