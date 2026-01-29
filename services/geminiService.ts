@@ -29,26 +29,24 @@ export const generateStudySchedule = async (
     Crie um cronograma semanal de estudo estruturado e prático.
     
     Perfil do usuário: ${profile}
-    Tempo disponível: ${timeAvailable}
+    Tempo disponível por dia: ${timeAvailable}
     ${weekContext ? `Semana de referência: ${weekContext}` : ''}
     
-    REGRAS DE ESTRUTURA E CONTEÚDO (RIGOROSO):
-    1. A lista deve conter EXATAMENTE 7 itens (Segunda a Domingo).
-    2. A ordem deve ser estritamente cronológica, começando na Segunda-feira.
+    ESTRUTURA LÓGICA SEMANAL (OBRIGATÓRIO):
+    1. SEGUNDA e TERÇA: O foco principal DEVE ser "Preparação: Reunião do Meio de Semana".
+    2. QUARTA: O evento fixo é "Reunião: Nossa Vida e Ministério Cristão".
+    3. QUINTA e SEXTA: O foco principal DEVE ser "Preparação: Reunião de Fim de Semana".
+    4. SÁBADO: O evento fixo é "Reunião: Discurso Público e Estudo de A Sentinela".
+    5. DOMINGO: O evento fixo é "Adoração em Família".
     
-    DEFINIÇÃO DOS DIAS FIXOS:
-    - Dia 3 (Quarta-feira): A atividade DEVE ser "Reunião Vida e Ministério".
-    - Dia 6 (Sábado): A atividade DEVE ser "Reunião de Fim de Semana".
-    - Dia 7 (Domingo): A atividade DEVE ser "Adoração em Família".
-    - Demais dias: Distribua Leitura da Bíblia, Preparação para reuniões e Ministério conforme o tempo do usuário.
-
-    Lógica de Leitura Bíblica:
-    - Incentive a leitura progressiva baseada no plano anual.
+    REGRAS DE CONTEÚDO (MUITO IMPORTANTE):
+    - LEITURA DA BÍBLIA: Deve ser incluída TODOS OS DIAS (Segunda a Sexta) como uma atividade complementar ou integrada, citando o plano anual.
+    - USO DO TEMPO: No campo 'focus', explique como o usuário deve usar os "${timeAvailable}" disponíveis naquele dia específico. Seja prático.
+    - NOMES DAS REUNIÕES: Use os nomes completos e corretos citados acima.
     
-    REGRAS DE FORMATAÇÃO E CODIFICAÇÃO (CRÍTICO):
-    - Idioma: Português Brasileiro (pt-BR).
-    - ACENTUAÇÃO: Use UTF-8 padrão. NUNCA substitua letras acentuadas por símbolos (Ex: Escreva "Bíblica" e NÃO "B#blica").
-    - NÃO use caracteres de escape desnecessários.
+    REGRAS DE ESTRUTURA E FORMATAÇÃO:
+    - Retorne EXATAMENTE 7 itens (Segunda a Domingo).
+    - Idioma: Português Brasileiro (pt-BR) com acentuação UTF-8 correta.
     
     Retorne APENAS um JSON array.
   `;
