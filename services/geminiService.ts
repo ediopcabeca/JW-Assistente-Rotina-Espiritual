@@ -220,13 +220,17 @@ export const generateDiscoursePreparation = async (
        - GUIA VOCAL: Adicione marcações de (Pausa), (Ênfase), (Acelerar) baseadas nas Lições 8, 9, 10 e 11.
     
     2. summary (AGORA SERÁ O "ESBOÇO EXPANDIDO PARA TRIBUNA"):
-       - NÃO FAÇA APENAS TÓPICOS. O orador precisa de segurança.
-       - Use frases completas para as ideias principais (Skeleton Sentence).
-       - PARA CADA TEXTO BÍBLICO, VOCÊ DEVE INCLUIR:
-         * [Antes]: Uma frase de introdução ao texto (Por que vamos ler?).
-         * [Texto]: A citação em **negrito**.
-         * [Depois]: A aplicação direta (O que aprendemos?).
-       - Mantenha visualmente limpo, com espaçamento, mas com conteúdo suficiente para que o orador bata o olho e lembre de toda a argumentação.
+       - OBJETIVO: Um guia de memória robusto, não um esqueleto anoréxico.
+       - NÃO TRANSCREVA TEXTOS BÍBLICOS: Coloque APENAS a referência (Ex: **João 3:16**).
+       - ESTRUTURA PARA TEXTOS BÍBLICOS (OBRIGATÓRIA):
+         * [Antes]: Gancho de introdução (O que buscar no texto).
+         * [Leitura]: Apenas a referência em negrito.
+         * [Depois]: A aplicação explicada (Raciocínio lógico).
+       - ESTRUTURA PARA PONTOS SEM TEXTO:
+         * NÃO use apenas "Tópico: O Amor". 
+         * USE FRASES DE MEMÓRIA: Ex: "O amor deve ser demonstrado por ações, assim como o Samaritano fez, e não apenas por palavras."
+         * O orador deve ler a frase e se lembrar de todo o parágrafo. Resuma o argumento, não o título.
+       - FORMATO: Visualmente limpo, espaçado, fácil de ler na tribuna.
     
     TOM DE VOZ:
     - Encorajador, Simples, Focado no Coração (Lição 19).
