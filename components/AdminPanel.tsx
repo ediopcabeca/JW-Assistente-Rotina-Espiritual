@@ -107,16 +107,18 @@ const AdminPanel: React.FC = () => {
             if (!groups[f.chapters]) groups[f.chapters] = {};
             if (f.type === 'text') groups[f.chapters].txt = fileObj;
             if (f.type === 'audio') groups[f.chapters].mp3 = fileObj;
-
-            // Marca como 'uploading' na UI
-            setFiles(prev => prev.map(item => item.id === f.id ? { ...item, status: 'uploading' } : item));
+            if (f.type === 'audio') groups[f.chapters].mp3 = fileObj;
         });
+
+        // Marca todos como 'uploading' inicialmente para feedback visual
+        setFiles(prev => prev.map(item => ({ ...item, status: 'uploading' })));
 
         for (const chapters in groups) {
             const { txt, mp3 } = groups[chapters];
             if (!txt) continue;
 
             try {
+                // Lê os dados do arquivo
                 const content = await txt.text();
                 const audioBase64 = mp3 ? await convertToBase64(mp3) : null;
 
@@ -133,11 +135,15 @@ const AdminPanel: React.FC = () => {
                     })
                 });
 
+                if (!res.ok) {
+                    throw new Error(`Servidor: ${res.status} - Verifique o tamanho do áudio.`);
+                }
+
                 const data = await res.json();
                 if (data.status === 'success' || data.status === 'updated') {
                     setFiles(prev => prev.map(f => f.chapters === chapters ? { ...f, status: 'success' } : f));
                 } else {
-                    throw new Error(data.error || 'Erro desconhecido');
+                    throw new Error(data.error || 'Erro no processamento');
                 }
             } catch (e: any) {
                 console.error(`Erro ao subir ${chapters}:`, e);
