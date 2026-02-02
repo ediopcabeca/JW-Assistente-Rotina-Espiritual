@@ -16,18 +16,45 @@ if (!$userData) {
 $userId = $userData['id'];
 $method = $_SERVER['REQUEST_METHOD'];
 
+// Função para remover acentos e normalizar strings para busca
+function normalizeString($str)
+{
+    $str = trim(strtolower($str));
+    $str = preg_replace('/[áàãâä]/u', 'a', $str);
+    $str = preg_replace('/[éèêë]/u', 'e', $str);
+    $str = preg_replace('/[íìîï]/u', 'i', $str);
+    $str = preg_replace('/[óòõôö]/u', 'o', $str);
+    $str = preg_replace('/[úùûü]/u', 'u', $str);
+    $str = preg_replace('/[ç]/u', 'c', $str);
+    return $str;
+}
+
 // Função auxiliar robusta para verificar se um capítulo está dentro de uma string de capítulos complexa
 function isChapterInRange($requested, $stored)
 {
-    if (trim(strtolower($requested)) === trim(strtolower($stored)))
+    $normReq = normalizeString($requested);
+    $normStored = normalizeString($stored);
+
+    if ($normReq === $normStored)
         return true;
+
+    // Regex para extrair Livro e Número do pedido (ex: "Gênesis 31")
     if (!preg_match('/^(.+)\s(\d+)$/u', $requested, $m))
         return false;
-    $bookReq = trim($m[1]);
+
+    $bookReqOrig = trim($m[1]);
+    $bookReqNorm = normalizeString($bookReqOrig);
     $numReq = (int) $m[2];
-    if (stripos($stored, $bookReq) === false)
+
+    // Verifica se o livro (normalizado) está na string armazenada (normalizada)
+    if (stripos($normStored, $bookReqNorm) === false)
         return false;
-    $numbersPart = preg_replace('/' . preg_quote($bookReq, '/') . '/iu', '', $stored);
+
+    // Para o parsing dos números, removemos o nome do livro (ignorando acento)
+    // Usamos a versão normalizada para achar a posição e extrair a parte numérica de forma segura
+    // Simplificação: vamos pegar tudo que sobrou após o nome do livro e tratar os números
+    $numbersPart = preg_replace('/' . preg_quote($bookReqNorm, '/') . '/i', '', $normStored);
+
     $parts = preg_split('/[;,]/', $numbersPart);
     foreach ($parts as $part) {
         $part = trim($part);

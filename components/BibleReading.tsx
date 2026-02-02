@@ -9,7 +9,8 @@ import {
   setStartDate as saveStartDate,
   hasStartDateSet,
   BIBLE_BOOKS,
-  getReadChapters
+  getReadChapters,
+  formatChapters
 } from '../services/bibleData';
 import { BookOpen, Sparkles, Loader2, CheckSquare, Square, Settings, ChevronUp, Book, Volume2, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -36,6 +37,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
 
   const [selectedBook, setSelectedBook] = useState<string | null>(null);
   const [readChapters, setReadChapters] = useState<string[]>([]);
+  const [selectedChapters, setSelectedChapters] = useState<string[]>([]);
 
   const refreshState = () => {
     const reading = getReadingForToday(userId);
@@ -45,6 +47,7 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
     setStartDateInput(getStartDateRaw(userId));
     setShowConfig(!hasStartDateSet(userId));
     setReadChapters(getReadChapters(userId));
+    setSelectedChapters([]); // Limpa seleção ao dar refresh ou trocar contexto
   };
 
   const fetchHighlight = async (chaptersToUse: string, forceShow: boolean = false) => {
@@ -238,6 +241,26 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
     }
   };
 
+  const toggleChapterSelection = (chapterId: string) => {
+    setSelectedChapters(prev =>
+      prev.includes(chapterId)
+        ? prev.filter(c => c !== chapterId)
+        : [...prev, chapterId].sort((a, b) => {
+          // Ordenação básica para manter o range bonito
+          const numA = parseInt(a.split(' ').pop() || '0');
+          const numB = parseInt(b.split(' ').pop() || '0');
+          return numA - numB;
+        })
+    );
+  };
+
+  const handleStudySelection = () => {
+    if (selectedChapters.length === 0) return;
+    const rangeText = formatChapters(selectedChapters);
+    fetchHighlight(rangeText, true);
+    setSelectedChapters([]); // Limpa após carregar
+  };
+
   const handleSaveConfig = () => {
     if (startDateInput) {
       saveStartDate(startDateInput, userId);
@@ -355,20 +378,42 @@ const BibleReading: React.FC<BibleReadingProps> = ({ userId }) => {
             </div>
           ) : (
             <div>
-              <button onClick={() => setSelectedBook(null)} className="mb-4 text-sm text-indigo-600 font-medium flex items-center gap-1 hover:underline">
-                <ChevronUp size={16} /> Voltar para lista
-              </button>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <button onClick={() => setSelectedBook(null)} className="text-sm text-indigo-600 font-medium flex items-center gap-1 hover:underline">
+                  <ChevronUp size={16} /> Voltar para lista
+                </button>
+                {selectedChapters.length > 0 && (
+                  <button
+                    onClick={handleStudySelection}
+                    className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-lg animate-bounce"
+                  >
+                    <Sparkles size={14} /> Estudar {formatChapters(selectedChapters)}
+                  </button>
+                )}
+              </div>
               <div className="flex items-center justify-between mb-4"><h4 className="text-lg font-bold text-gray-900 dark:text-white">{selectedBook}</h4></div>
               <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-2">
                 {Array.from({ length: BIBLE_BOOKS.find(b => b.name === selectedBook)?.chapters || 0 }, (_, i) => i + 1).map(num => {
                   const chapterId = `${selectedBook} ${num}`;
                   const isRead = readChapters.includes(chapterId);
+                  const isSelected = selectedChapters.includes(chapterId);
                   return (
                     <div key={num} className="relative group">
                       <button
-                        onClick={() => fetchHighlight(chapterId, true)}
-                        className={`h-10 w-full rounded-lg font-bold text-sm transition-all border ${isRead ? 'bg-green-500 text-white border-green-600' : 'bg-white dark:bg-gray-800 border-gray-200 text-gray-600 dark:text-gray-400'}`}
-                        title="Ver resumo/pérolas"
+                        onClick={() => {
+                          if (selectedChapters.length > 0) {
+                            toggleChapterSelection(chapterId);
+                          } else {
+                            fetchHighlight(chapterId, true);
+                          }
+                        }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          toggleChapterSelection(chapterId);
+                        }}
+                        className={`h-10 w-full rounded-lg font-bold text-sm transition-all border ${isSelected ? 'bg-indigo-600 text-white border-indigo-700 ring-2 ring-indigo-300' :
+                          isRead ? 'bg-green-500 text-white border-green-600' : 'bg-white dark:bg-gray-800 border-gray-200 text-gray-600 dark:text-gray-400'}`}
+                        title="Clique p/ ver, Clique-Direito p/ selecionar lote"
                       >
                         {num}
                       </button>
