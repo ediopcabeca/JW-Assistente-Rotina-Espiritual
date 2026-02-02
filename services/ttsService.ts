@@ -88,6 +88,13 @@ export const stopSpeaking = () => {
     }
 };
 
+export const changeSpeed = (speed: number) => {
+    currentSpeed = speed;
+    if (currentAudio) {
+        currentAudio.playbackRate = speed;
+    }
+};
+
 export const isSpeaking = (): boolean => {
     return currentAudio !== null && !currentAudio.paused;
 };

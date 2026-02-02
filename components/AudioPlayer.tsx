@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Play, Square, Loader2, Volume2, Pause } from 'lucide-react';
-import { speakText, stopSpeaking, pauseSpeaking } from '../services/ttsService';
+import { speakText, stopSpeaking, pauseSpeaking, changeSpeed } from '../services/ttsService';
 
 interface AudioPlayerProps {
     text: string;
@@ -14,6 +14,11 @@ type PlaybackStatus = 'idle' | 'loading' | 'playing' | 'paused';
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ text, label = "Ouvir Conteúdo", cachedAudio, onAudioGenerated }) => {
     const [status, setStatus] = useState<PlaybackStatus>('idle');
     const [speed, setSpeed] = useState(1.0);
+
+    const handleSpeedChange = (newSpeed: number) => {
+        setSpeed(newSpeed);
+        changeSpeed(newSpeed);
+    };
 
     const handlePlay = async () => {
         if (!text) return;
@@ -50,9 +55,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ text, label = "Ouvir Conteúd
             <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-lg p-0.5 border border-gray-200 dark:border-gray-600">
                 <select
                     value={speed}
-                    onChange={(e) => setSpeed(parseFloat(e.target.value))}
+                    onChange={(e) => handleSpeedChange(parseFloat(e.target.value))}
                     className="bg-transparent text-[10px] font-bold text-gray-600 dark:text-gray-300 outline-none px-1 cursor-pointer"
-                    disabled={status === 'loading' || status === 'playing' || status === 'paused'}
+                    disabled={status === 'loading'}
                 >
                     <option value="0.75">0.75x</option>
                     <option value="1.0">1.0x</option>
