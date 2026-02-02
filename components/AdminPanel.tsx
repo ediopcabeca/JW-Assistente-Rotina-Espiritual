@@ -16,14 +16,44 @@ const AdminPanel: React.FC = () => {
     const [files, setFiles] = useState<BatchFile[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Converte nome de arquivo (ex: Genesis_39-41.txt) em string de capítulos (Gênesis 39-41)
+    // Converte nome de arquivo (ex: Genesis_49_Exodo_1_devocional.txt ou Genesis_1_3.txt)
     const parseFileName = (name: string): string => {
-        const base = name.split('.')[0];
+        let base = name.split('.')[0];
+        // Remover sufixos de descrição
+        base = base.replace(/_devocional$/, '').replace(/_devociona$/, '').replace(/_devocion$/, '');
+
         const parts = base.split('_');
         if (parts.length < 2) return base;
-        const book = parts[0].replace(/-/g, ' ');
+
+        // Limpeza de nomes de livros (Inglês/Sem acento -> Português)
+        const fixBook = (b: string) => {
+            b = b.toLowerCase().replace(/-/g, ' ');
+            if (b === 'genesis') return 'Gênesis';
+            if (b === 'exodo' || b === 'exodus') return 'Êxodo';
+            if (b === 'levitico' || b === 'leviticus') return 'Levítico';
+            if (b === 'numeros' || b === 'numbers') return 'Números';
+            if (b === 'deuteronomio' || b === 'deuteronomy') return 'Deuteronômio';
+            if (b === 'josue' || b === 'joshua') return 'Josué';
+            if (b === 'juizes' || b === 'judges') return 'Juízes';
+            if (b === 'cronicas' || b === 'chronicles') return 'Crônicas';
+            // Adicione outros conforme necessário ou capitalize a primeira letra
+            return b.charAt(0).toUpperCase() + b.slice(1);
+        };
+
+        // Caso 1: Livro_Cap1_Cap2 (ex: Genesis_1_3)
+        if (parts.length === 3 && /^\d+$/.test(parts[1]) && /^\d+$/.test(parts[2])) {
+            return `${fixBook(parts[0])} ${parts[1]}-${parts[2]}`;
+        }
+
+        // Caso 2: Livro1_Cap1_Livro2_Cap2 (ex: Genesis_49_Exodo_1)
+        if (parts.length === 4 && /^\d+$/.test(parts[1]) && /^\d+$/.test(parts[3])) {
+            return `${fixBook(parts[0])} ${parts[1]} - ${fixBook(parts[2])} ${parts[3]}`;
+        }
+
+        // Caso Padrão: Livro_CapFinal
+        const book = fixBook(parts[0]);
         const chapters = parts[1];
-        return `${book} ${chapters}`;
+        return `${book} ${chapters.replace(/-/g, '-')}`;
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

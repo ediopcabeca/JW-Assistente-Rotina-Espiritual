@@ -195,7 +195,21 @@ export const formatChapters = (chapters: string[]): string => {
   }).join('; ');
 };
 
-// --- SAFE MAIN LOGIC ---
+const getDayRange = (day: number) => {
+  const start = Math.floor((day - 1) * CHAPTERS_PER_DAY);
+  const end = Math.min(TOTAL_CHAPTERS, Math.floor(day * CHAPTERS_PER_DAY));
+  return { start, end };
+};
+
+export const getPlanDayOfChapter = (chapter: string): number => {
+  const index = ALL_CHAPTERS.indexOf(chapter);
+  if (index === -1) return 1;
+  for (let d = 1; d <= 365; d++) {
+    const { start, end } = getDayRange(d);
+    if (index >= start && index < end) return d;
+  }
+  return 365;
+};
 
 export const getReadingForToday = (userId?: string): {
   text: string;
@@ -209,7 +223,6 @@ export const getReadingForToday = (userId?: string): {
     const readChapters = getReadChapters(userId);
     const startDate = getStartDate(userId);
 
-    // Calcula o dia ideal do plano (1 a 365)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const baseStart = new Date(startDate);
@@ -219,30 +232,32 @@ export const getReadingForToday = (userId?: string): {
     const elapsedDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
     const idealPlanDay = Math.min(365, elapsedDays + 1);
 
-    // Índices ideais (onde o usuário DEVERIA estar)
-    const idealStartIndex = Math.floor((idealPlanDay - 1) * CHAPTERS_PER_DAY);
-    const idealEndIndex = Math.min(TOTAL_CHAPTERS, Math.floor(idealPlanDay * CHAPTERS_PER_DAY));
-    const idealChapters = ALL_CHAPTERS.slice(idealStartIndex, idealEndIndex);
+    // Bloco Ideal
+    const { start: idealStart, end: idealEnd } = getDayRange(idealPlanDay);
+    const idealChapters = ALL_CHAPTERS.slice(idealStart, idealEnd);
     const idealText = formatChapters(idealChapters);
 
-    // Progresso Real (Primeiro capítulo não lido)
+    // Bloco Real
     const firstUnreadIndex = ALL_CHAPTERS.findIndex(c => !readChapters.includes(c));
     const effectiveIndex = firstUnreadIndex === -1 ? TOTAL_CHAPTERS : firstUnreadIndex;
 
-    // Sugere os próximos 3 capítulos (ritmo aproximado para terminar em 1 ano)
-    const adaptiveChapters = ALL_CHAPTERS.slice(effectiveIndex, Math.min(TOTAL_CHAPTERS, effectiveIndex + 3));
+    // Determina qual dia do plano contém o primeiro capítulo não lido
+    const effectivePlanDay = firstUnreadIndex === -1 ? 365 : getPlanDayOfChapter(ALL_CHAPTERS[effectiveIndex]);
+    const { start: adaptiveStart, end: adaptiveEnd } = getDayRange(effectivePlanDay);
+
+    const adaptiveChapters = ALL_CHAPTERS.slice(adaptiveStart, adaptiveEnd);
     const adaptiveText = formatChapters(adaptiveChapters);
 
-    const isBehind = effectiveIndex < idealStartIndex;
-    const isAhead = (effectiveIndex > idealEndIndex) || (firstUnreadIndex === -1);
+    const isBehind = effectiveIndex < idealStart;
+    const isAhead = (effectiveIndex >= idealEnd) || (firstUnreadIndex === -1);
 
     return {
       text: adaptiveText,
       chapters: adaptiveChapters,
       planDay: idealPlanDay,
-      isBehind: isBehind,
-      isAhead: isAhead,
-      idealText: idealText
+      isBehind,
+      isAhead,
+      idealText
     };
   } catch (e) {
     console.error("Critical error in getReadingForToday:", e);
