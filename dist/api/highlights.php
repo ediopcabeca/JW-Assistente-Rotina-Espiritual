@@ -80,15 +80,30 @@ if ($numReq >= (int) $range[1] && $numReq <= (int) $range[2]) return true; } // 
     break;
 
     case 'POST':
+    // 1. Tenta obter dados via FormData (multipart/form-data)
+    $chapters = $_POST['chapters'] ?? null;
+    $content = $_POST['content'] ?? null;
+    $id = $_POST['id'] ?? null;
+    $audio = null;
+
+    if ($chapters !== null) {
+    // Se veio via FormData
+    if (isset($_FILES['audio_file']) && $_FILES['audio_file']['error'] === UPLOAD_ERR_OK) {
+    $audioData = file_get_contents($_FILES['audio_file']['tmp_name']);
+    $audio = base64_encode($audioData);
+    }
+    } else {
+    // 2. Fallback para JSON (legado/app normal)
     $input = json_decode(file_get_contents('php://input'), true);
     $id = $input['id'] ?? null;
     $chapters = $input['chapters'] ?? '';
     $content = $input['content'] ?? '';
     $audio = $input['audio_content'] ?? null;
+    }
 
     if (!$chapters || !$content) {
     http_response_code(400);
-    echo json_encode(["error" => "Dados incompletos"]);
+    echo json_encode(["status" => "error", "error" => "Dados incompletos (Capítulos e Conteúdo são obrigatórios)"]);
     exit;
     }
 

@@ -118,25 +118,25 @@ const AdminPanel: React.FC = () => {
             if (!txt) continue;
 
             try {
-                // Lê os dados do arquivo
-                const content = await txt.text();
-                const audioBase64 = mp3 ? await convertToBase64(mp3) : null;
+                const formData = new FormData();
+                formData.append('chapters', chapters);
+                formData.append('content', await txt.text());
+                if (mp3) {
+                    formData.append('audio_file', mp3);
+                }
 
                 const res = await fetch('/api/highlights.php', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({
-                        chapters,
-                        content,
-                        audio_content: audioBase64
-                    })
+                    body: formData
                 });
 
                 if (!res.ok) {
-                    throw new Error(`Servidor: ${res.status} - Verifique o tamanho do áudio.`);
+                    const errorText = await res.text();
+                    console.error('Erro Servidor:', errorText);
+                    throw new Error(`Servidor: ${res.status} - Erro no upload.`);
                 }
 
                 const data = await res.json();
