@@ -115,15 +115,22 @@ const AdminPanel: React.FC = () => {
 
         for (const chapters in groups) {
             const { txt, mp3 } = groups[chapters];
-            if (!txt) continue;
+            if (!txt && !mp3) continue;
 
             try {
                 const formData = new FormData();
                 formData.append('chapters', chapters);
-                formData.append('content', await txt.text());
+
+                if (txt) {
+                    formData.append('content', await txt.text());
+                }
+
                 if (mp3) {
                     formData.append('audio_file', mp3);
                 }
+
+                // Log para depuração
+                console.log(`Subindo ${chapters}: TXT=${!!txt}, MP3=${!!mp3}`);
 
                 const res = await fetch('/api/highlights.php', {
                     method: 'POST',
@@ -136,7 +143,7 @@ const AdminPanel: React.FC = () => {
                 if (!res.ok) {
                     const errorText = await res.text();
                     console.error('Erro Servidor:', errorText);
-                    throw new Error(`Servidor: ${res.status} - Erro no upload.`);
+                    throw new Error(`Servidor: ${res.status}`);
                 }
 
                 const data = await res.json();
