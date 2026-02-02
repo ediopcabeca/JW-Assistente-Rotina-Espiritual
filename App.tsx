@@ -300,32 +300,36 @@ const App: React.FC = () => {
         ${isDesktopSidebarOpen ? 'md:translate-x-0 md:w-64' : 'md:w-0 md:translate-x-0 md:border-r-0'}
       `}>
         <div className="w-64"> {/* Fixed width container to prevent layout shift of contents during collapse */}
-          <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-start">
-            <div>
-              <h1 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                <span className="w-8 h-8 bg-[#5a3696] rounded-lg flex items-center justify-center text-white font-bold text-xs">JW</span>
-                <span>Assistente</span>
-              </h1>
-              <div className="mt-4 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-                <User size={16} className="text-gray-500" />
-                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[140px] leading-tight">{currentUser}</span>
-                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold ml-1 block">v1.5.1</span>
+          <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {/* Desktop Close Button - Now on the left for better UX */}
+              <button
+                onClick={() => setIsDesktopSidebarOpen(false)}
+                className="hidden md:flex p-1.5 text-gray-400 hover:text-blue-600 dark:text-gray-500 dark:hover:text-blue-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Recolher Menu"
+              >
+                <PanelLeftClose size={20} />
+              </button>
+
+              <div>
+                <h1 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                  <span className="w-8 h-8 bg-[#5a3696] rounded-lg flex items-center justify-center text-white font-bold text-xs">JW</span>
+                  <span>Assistente</span>
+                </h1>
+                <div className="mt-2 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
+                  <User size={14} className="text-gray-500" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[120px] leading-tight">{currentUser}</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold ml-1 block">v1.5.2</span>
+                </div>
               </div>
             </div>
+
             {/* Close button for mobile within drawer */}
             <button
               onClick={() => setIsMobileMenuOpen(false)}
               className="md:hidden p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
             >
               <X size={24} />
-            </button>
-            {/* Desktop Close Button */}
-            <button
-              onClick={() => setIsDesktopSidebarOpen(false)}
-              className="hidden md:block p-1 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-              title="Recolher Menu"
-            >
-              <PanelLeftClose size={24} />
             </button>
           </div>
           <nav className="p-4 space-y-2">
@@ -389,7 +393,7 @@ const App: React.FC = () => {
         {!isDesktopSidebarOpen && (
           <button
             onClick={() => setIsDesktopSidebarOpen(true)}
-            className="hidden md:flex absolute top-4 left-4 z-20 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-blue-600"
+            className="hidden md:flex absolute top-6 left-6 z-20 p-1.5 bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:text-blue-600 transition-transform active:scale-95"
             title="Expandir Menu"
           >
             <PanelLeft size={24} />
