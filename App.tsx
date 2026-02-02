@@ -311,15 +311,17 @@ const App: React.FC = () => {
                 <PanelLeftClose size={20} />
               </button>
 
-              <div>
+              <div className="flex-1 min-w-0">
                 <h1 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                  <span className="w-8 h-8 bg-[#5a3696] rounded-lg flex items-center justify-center text-white font-bold text-xs">JW</span>
-                  <span>Assistente</span>
+                  <span className="w-8 h-8 bg-[#5a3696] rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-xs">JW</span>
+                  <span className="truncate">Assistente</span>
                 </h1>
-                <div className="mt-2 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden">
+                <div className="mt-2 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
                   <User size={14} className="text-gray-500 flex-shrink-0" />
-                  <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate leading-tight">{currentUser}</span>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold flex-shrink-0">v1.5.3</span>
+                  <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate leading-tight">{currentUser}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold flex-shrink-0 bg-gray-200 dark:bg-gray-700 px-1 rounded">v1.5.4</span>
+                  </div>
                 </div>
               </div>
             </div>
