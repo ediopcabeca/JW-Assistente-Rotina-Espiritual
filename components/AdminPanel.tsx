@@ -29,7 +29,7 @@ const AdminPanel: React.FC = () => {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFiles = Array.from(e.target.files || []);
         const newFiles: BatchFile[] = selectedFiles.map(file => {
-            const type = file.name.endsWith('.txt') ? 'text' : 'audio';
+            const type = (file.name.endsWith('.txt')) ? 'text' : 'audio';
             return {
                 id: Math.random().toString(36).substr(2, 9),
                 name: file.name,
@@ -76,7 +76,7 @@ const AdminPanel: React.FC = () => {
             const chapters = parseFileName(file.name);
             if (!groups[chapters]) groups[chapters] = {};
             if (file.name.endsWith('.txt')) groups[chapters].txt = file;
-            if (file.name.endsWith('.mp3')) groups[chapters].mp3 = file;
+            if (file.name.endsWith('.mp3') || file.name.endsWith('.wav')) groups[chapters].mp3 = file;
         });
 
         for (const chapters in groups) {
@@ -136,16 +136,16 @@ const AdminPanel: React.FC = () => {
                                 type="file"
                                 id="batch-upload-input"
                                 multiple
-                                accept=".txt,.mp3"
+                                accept=".txt,.mp3,.wav"
                                 onChange={handleFileSelect}
                                 className="absolute inset-0 opacity-0 cursor-pointer"
                             />
                             <Upload className="mx-auto text-slate-400 group-hover:text-indigo-500 mb-4" size={48} />
                             <h3 className="font-bold text-slate-700 dark:text-slate-200">Selecionar Arquivos</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Arraste seus .txt e .mp3 para cá</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">Arraste seus .txt, .mp3 ou .wav para cá</p>
                             <div className="mt-4 flex flex-wrap justify-center gap-2">
-                                <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">Ex: Genesis_39-41.txt</span>
-                                <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">Ex: Genesis_39-41.mp3</span>
+                                <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">Ex: Gênesis_1-3.txt</span>
+                                <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">Ex: Gênesis_1-3.wav</span>
                             </div>
                         </div>
 
@@ -214,10 +214,10 @@ const AdminPanel: React.FC = () => {
                     <AlertCircle size={18} /> Instruções Importantes
                 </h4>
                 <ul className="text-sm text-indigo-800 dark:text-indigo-300 space-y-2 list-disc pl-5">
-                    <li>Os arquivos .txt e .mp3 devem ter o **mesmo nome base** (ex: `Genesis_1-3.txt` e `Genesis_1-3.mp3`).</li>
-                    <li>O nome deve seguir o padrão: `NomeDoLivro_Capitulos.extensão`.</li>
-                    <li>Os espaços no nome do livro devem ser preservados ou substituídos por traços no nome do arquivo (o script corrigirá).</li>
-                    <li>Caso o registro já exista no banco, ele será **atualizado** com o novo conteúdo e áudio.</li>
+                    <li>Os arquivos .txt e .wav (ou .mp3) devem ter o **mesmo nome base**.</li>
+                    <li>Formatos suportados: **Textos (.txt)** e **Áudios (.mp3 ou .wav)**.</li>
+                    <li>Se o áudio estiver corrompido, siga as instruções de reconstrução de cabeçalho no `PROMPT_IA.md`.</li>
+                    <li>Os registros existentes no banco serão atualizados automaticamente.</li>
                 </ul>
             </div>
         </div>

@@ -25,8 +25,9 @@ export const speakText = async (
         let audioContent: string | null = null;
 
         if (preGeneratedAudio) {
-            // Usa o áudio já carregado do Banco de Dados
-            audioSrc = `data:audio/mp3;base64,${preGeneratedAudio}`;
+            // Detecção básica de formato via base64
+            const mime = preGeneratedAudio.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3';
+            audioSrc = `data:${mime};base64,${preGeneratedAudio}`;
             audioContent = preGeneratedAudio;
         } else {
             // Chama a API para gerar novo áudio
@@ -49,7 +50,8 @@ export const speakText = async (
             }
 
             audioContent = data.audioContent;
-            audioSrc = `data:audio/mp3;base64,${audioContent}`;
+            const mime = audioContent.startsWith('UklGR') ? 'audio/wav' : 'audio/mp3';
+            audioSrc = `data:${mime};base64,${audioContent}`;
         }
 
         currentAudio = new Audio(audioSrc);

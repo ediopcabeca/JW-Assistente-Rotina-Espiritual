@@ -302,7 +302,7 @@ export const generateBibleHighlights = async (
   chapters: string
 ): Promise<string> => {
   const prompt = `
-    Você é um instrutor experiente da Bíblia que fornece insights espirituais profundos e encorajadores.
+    Você é um instrutor experiente da Bíblia que fornece insights espirituais profundos e encorajadores, baseando-se estritamente na Tradução do Novo Mundo da Bíblia Sagrada.
     A leitura de hoje é: "${chapters}".
     
     Analise os capítulos de hoje fornecendo pontos para meditação:
