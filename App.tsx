@@ -308,7 +308,8 @@ const App: React.FC = () => {
               </h1>
               <div className="mt-4 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
                 <User size={16} className="text-gray-500" />
-                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[140px]">{currentUser}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[140px] leading-tight">{currentUser}</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold ml-1 block">v1.5.0</span>
               </div>
             </div>
             {/* Close button for mobile within drawer */}
