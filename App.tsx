@@ -316,10 +316,10 @@ const App: React.FC = () => {
                   <span className="w-8 h-8 bg-[#5a3696] rounded-lg flex items-center justify-center text-white font-bold text-xs">JW</span>
                   <span>Assistente</span>
                 </h1>
-                <div className="mt-2 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md">
-                  <User size={14} className="text-gray-500" />
-                  <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate max-w-[120px] leading-tight">{currentUser}</span>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold ml-1 block">v1.5.2</span>
+                <div className="mt-2 flex items-center gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden">
+                  <User size={14} className="text-gray-500 flex-shrink-0" />
+                  <span className="text-xs text-gray-600 dark:text-gray-400 font-medium truncate leading-tight">{currentUser}</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold flex-shrink-0">v1.5.3</span>
                 </div>
               </div>
             </div>
