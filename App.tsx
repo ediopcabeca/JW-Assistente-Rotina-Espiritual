@@ -7,6 +7,7 @@ import TranscriptionHelper from './components/TranscriptionHelper';
 import StudyQuestionsHelper from './components/StudyQuestionsHelper';
 import IllustrationBuilder from './components/IllustrationBuilder';
 import LoginScreen from './components/LoginScreen';
+import AdminPanel from './components/AdminPanel';
 import { syncAdapter } from './services/syncAdapter';
 import { getReadingForToday } from './services/bibleData';
 import {
@@ -25,7 +26,8 @@ import {
   PanelLeft,
   Palette,
   BookOpen,
-  Search
+  Search,
+  Database
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -149,6 +151,8 @@ const App: React.FC = () => {
         return <StudyQuestionsHelper />;
       case AppView.ILLUSTRATIONS:
         return <IllustrationBuilder />;
+      case AppView.ADMIN:
+        return <AdminPanel />;
       case AppView.DASHBOARD:
       default:
         return (
@@ -341,6 +345,7 @@ const App: React.FC = () => {
             <NavItem view={AppView.MINISTRY} label="Ministério" icon={<Briefcase size={20} />} colorClass="text-orange-500" />
             <NavItem view={AppView.BIBLE} label="Leitura Bíblica" icon={<Book size={20} />} colorClass="text-indigo-500" />
             <NavItem view={AppView.TRANSCRIPTION} label="NotebookLM Prep" icon={<FileText size={20} />} colorClass="text-emerald-500" />
+            <NavItem view={AppView.ADMIN} label="Gestão" icon={<Database size={20} />} colorClass="text-slate-500" />
           </nav>
         </div>
 
