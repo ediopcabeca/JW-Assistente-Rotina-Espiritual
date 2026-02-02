@@ -15,6 +15,7 @@ interface BatchFile {
 const AdminPanel: React.FC = () => {
     const [files, setFiles] = useState<BatchFile[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const fileObjectsRef = React.useRef<Record<string, File>>({});
 
     // Converte nome de arquivo (ex: Genesis_49_Exodo_1_devocional.txt ou Genesis_1_3.txt)
     const parseFileName = (name: string): string => {
@@ -59,9 +60,12 @@ const AdminPanel: React.FC = () => {
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFiles = Array.from(e.target.files || []);
         const newFiles: BatchFile[] = selectedFiles.map(file => {
+            const fileId = Math.random().toString(36).substr(2, 9);
+            fileObjectsRef.current[fileId] = file;
+
             const type = (file.name.endsWith('.txt')) ? 'text' : 'audio';
             return {
-                id: Math.random().toString(36).substr(2, 9),
+                id: fileId,
                 name: file.name,
                 type: type as any,
                 status: 'pending',
@@ -96,17 +100,16 @@ const AdminPanel: React.FC = () => {
         // Agrupa arquivos por "chapters" (nome base)
         const groups: Record<string, { txt?: File, mp3?: File }> = {};
 
-        // Precisamos dos objetos File reais, então vamos pegar do input novamente ou usar um ref
-        // Como simplificação para este exemplo, vamos assumir que o usuário selecionou tudo de uma vez
-        // Em um cenário real, usaríamos um estado para guardar os objetos File
-        const fileInput = document.getElementById('batch-upload-input') as HTMLInputElement;
-        const actualFiles = Array.from(fileInput.files || []);
+        files.forEach(f => {
+            const fileObj = fileObjectsRef.current[f.id];
+            if (!fileObj || !f.chapters) return;
 
-        actualFiles.forEach(file => {
-            const chapters = parseFileName(file.name);
-            if (!groups[chapters]) groups[chapters] = {};
-            if (file.name.endsWith('.txt')) groups[chapters].txt = file;
-            if (file.name.endsWith('.mp3') || file.name.endsWith('.wav')) groups[chapters].mp3 = file;
+            if (!groups[f.chapters]) groups[f.chapters] = {};
+            if (f.type === 'text') groups[f.chapters].txt = fileObj;
+            if (f.type === 'audio') groups[f.chapters].mp3 = fileObj;
+
+            // Marca como 'uploading' na UI
+            setFiles(prev => prev.map(item => item.id === f.id ? { ...item, status: 'uploading' } : item));
         });
 
         for (const chapters in groups) {
@@ -184,7 +187,10 @@ const AdminPanel: React.FC = () => {
                                 <h3 className="font-bold text-slate-700 dark:text-slate-200">Fila de Importação ({files.length})</h3>
                                 {files.length > 0 && (
                                     <button
-                                        onClick={() => setFiles([])}
+                                        onClick={() => {
+                                            setFiles([]);
+                                            fileObjectsRef.current = {};
+                                        }}
                                         className="text-xs text-red-500 hover:underline"
                                     >
                                         Limpar Tudo
