@@ -55,6 +55,7 @@ export const speakText = async (
         }
 
         currentAudio = new Audio(audioSrc);
+        currentAudio.playbackRate = speed;
         currentText = text;
         currentSpeed = speed;
 
