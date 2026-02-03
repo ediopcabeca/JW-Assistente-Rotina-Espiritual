@@ -1,12 +1,18 @@
-// sw.js - v1.6.6 (Stable Real Push + Persistence)
-const CACHE_NAME = 'jw-assistant-v8';
+// sw.js - v1.7.0 (Push-to-Fetch Strategy)
+const CACHE_NAME = 'jw-assistant-v10';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.filter((name) => name !== CACHE_NAME).map((name) => caches.delete(name))
+      );
+    }).then(() => clients.claim())
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -21,23 +27,45 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// Listener para o servidor acordar o aparelho
+// ESCUTADOR DE PUSH (O Coração da v1.7.0)
 self.addEventListener('push', (event) => {
-  let data = { title: 'Lembrete JW', body: 'Atividade agendada!' };
+  let promise;
+
   if (event.data) {
-    try { data = event.data.json(); } catch (e) { data.body = event.data.text(); }
+    // Se veio com dados (improvável no nosso PHP atual), usa eles
+    try {
+      const data = event.data.json();
+      promise = Promise.resolve(data);
+    } catch (e) {
+      promise = Promise.resolve({ title: 'Lembrete JW', body: event.data.text() });
+    }
+  } else {
+    // ESTRATÉGIA PUSH-TO-FETCH (v1.7.0)
+    // Busca os dados no servidor porque o push veio "vazio" (apenas sinal de acorda)
+    console.log("[SW] Push vazio recebido, buscando detalhes...");
+
+    // Tenta recuperar o token do IndexedDB ou do Cache (aqui usamos uma estratégia de fetch simples)
+    // Nota: O servidor precisa identificar o usuário. Normalmente usamos o endpoint de subscrição como ID.
+    promise = fetch('/api/push_fetch.php')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') return data;
+        throw new Error("Sem dados");
+      });
   }
 
-  const options = {
-    body: data.body,
-    icon: '/icon.png',
-    badge: '/icon.png',
-    vibrate: [200, 100, 200],
-    requireInteraction: true // Mantém o aviso na tela do Windows/Android
-  };
-
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    promise.then(data => {
+      return self.registration.showNotification(data.title || 'Lembrete JW', {
+        body: data.body || 'Atividade agendada!',
+        icon: '/icon.png',
+        badge: '/icon.png',
+        vibrate: [200, 100, 200],
+        requireInteraction: true
+      });
+    }).catch(err => {
+      console.warn("[SW] Falha ao processar push:", err);
+    })
   );
 });
 

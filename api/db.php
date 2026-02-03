@@ -57,6 +57,8 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_discourses (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, material LONGTEXT, scriptures VARCHAR(255), time_min VARCHAR(10), resources TEXT, full_text LONGTEXT NOT NULL, summary LONGTEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS push_subscriptions (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, endpoint TEXT NOT NULL, p256dh VARCHAR(255) NOT NULL, auth VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, endpoint(191)), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
 
+    $pdo->exec("CREATE TABLE IF NOT EXISTS scheduled_notifications (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, activity_index INT NOT NULL, title VARCHAR(255) NOT NULL, body TEXT NOT NULL, scheduled_time DATETIME NOT NULL, sent TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, activity_index, scheduled_time), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
+
     // Upgrade de colunas para quem já tinha o banco criado com limites menores
     $pdo->exec("ALTER TABLE user_data MODIFY COLUMN sync_data LONGTEXT;");
     $pdo->exec("ALTER TABLE bible_highlights MODIFY COLUMN content LONGTEXT;");

@@ -194,6 +194,28 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     if (timeUntil > 0) {
       console.log(`[PUSH] Agendando "${item.activity}" para ${targetDate.toLocaleString()}`);
 
+      // NOVO v1.7.0: Registrar agendamento no servidor para garantir disparo com app fechado
+      try {
+        const token = localStorage.getItem('jw_auth_token');
+        if (token) {
+          fetch('/api/push_schedule.php', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              index: index,
+              title: `Lembrete JW: ${item.activity}`,
+              body: item.focus,
+              scheduled_time: targetDate.toISOString().slice(0, 19).replace('T', ' ') // Formato MySQL DATETIME
+            })
+          });
+        }
+      } catch (e) {
+        console.warn("[PUSH] Falha ao registrar agendamento no servidor:", e);
+      }
+
       if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         const registration = await navigator.serviceWorker.ready;
 
