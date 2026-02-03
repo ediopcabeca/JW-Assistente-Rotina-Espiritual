@@ -22,10 +22,32 @@ try {
     $stmt_logs = $pdo->query("SELECT * FROM system_logs ORDER BY created_at DESC LIMIT 20");
     $system_logs = $stmt_logs->fetchAll(PDO::FETCH_ASSOC);
 
+    // 5. Hostinger Internal Logs (v2.0.8) - Para ver por que o Node.js não liga
+    $hostinger_logs = [];
+    $logDir = realpath(__DIR__ . '/../.builds/logs');
+    if ($logDir && is_dir($logDir)) {
+        $dirs = scandir($logDir, SCANDIR_SORT_DESCENDING);
+        foreach ($dirs as $dir) {
+            if ($dir === '.' || $dir === '..')
+                continue;
+            $fullPath = $logDir . DIRECTORY_SEPARATOR . $dir;
+            if (is_dir($fullPath)) {
+                $files = scandir($fullPath);
+                foreach ($files as $file) {
+                    if ($file === '.' || $file === '..')
+                        continue;
+                    $hostinger_logs[$dir][$file] = substr(file_get_contents($fullPath . DIRECTORY_SEPARATOR . $file), -1000);
+                }
+                break; // Apenas o mais recente
+            }
+        }
+    }
+
     echo json_encode([
         "status" => "success",
         "server_times" => $times,
         "system_logs" => $system_logs,
+        "hostinger_internal_logs" => $hostinger_logs,
         "next_to_send" => $next_notifications,
         "recently_sent" => $sent_notifications
     ]);
