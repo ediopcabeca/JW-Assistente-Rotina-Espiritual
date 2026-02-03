@@ -2,7 +2,7 @@
 // api/map_files.php
 header('Content-Type: text/plain');
 
-function listDir($dir, $prefix = '', $maxDepth = 3)
+function listDir($dir, $prefix = '', $maxDepth = 2)
 {
     if ($maxDepth < 0)
         return;
@@ -14,12 +14,19 @@ function listDir($dir, $prefix = '', $maxDepth = 3)
             continue;
         $path = $dir . '/' . $file;
         echo $prefix . $file . (is_dir($path) ? '/' : '') . " (" . @date("Y-m-d H:i:s", @filemtime($path)) . ")\n";
-        if (is_dir($path)) {
+        if (is_dir($path) && $maxDepth > 0) {
             listDir($path, $prefix . '  ', $maxDepth - 1);
         }
     }
 }
 
-echo "--- MAPEAMENTO PROFUNDO ---\n\n";
-listDir(realpath(__DIR__ . '/../../')); // Sobe dois níveis para ver tudo
+$sourceDir = realpath(__DIR__ . '/../.builds/source');
+echo "--- CONTEÚDO DE .builds/source ---\n";
+if ($sourceDir)
+    listDir($sourceDir);
+else
+    echo "Pasta .builds/source não encontrada.\n";
+
+echo "\n--- RAÍZ DO SITE ---\n";
+listDir(realpath(__DIR__ . '/../'), '', 1);
 ?>
