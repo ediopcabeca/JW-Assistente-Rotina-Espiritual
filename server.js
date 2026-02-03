@@ -65,7 +65,7 @@ const initConnection = async () => {
         await p.execute(`CREATE TABLE IF NOT EXISTS scheduled_notifications (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, activity_index INT NOT NULL, title VARCHAR(255) NOT NULL, body TEXT NOT NULL, scheduled_time DATETIME NOT NULL, sent TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, activity_index, scheduled_time), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)`);
 
         // Tabela de Logs (v2.0.4)
-        await p.execute(`CREATE TABLE IF NOT EXISTS system_logs (id INT AUTO_INCREMENT PRIMARY KEY, level VARCHAR(50) NOT NULL, message TEXT NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+        await p.execute(`CREATE TABLE IF NOT EXISTS system_logs (id INT AUTO_INCREMENT PRIMARY KEY, level VARCHAR(20), message TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB`);
 
         return p;
     } catch (err) {
@@ -302,7 +302,7 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    await ntfyLog(`[BOOT] Servidor v2.0.6 iniciado com sucesso na porta ${PORT}`);
-    app.listen(PORT, () => console.log(`[SERVER] v2.0.6 (NTFY Resiliente) na porta ${PORT}`));
+    await ntfyLog(`[BOOT] Servidor v2.0.7 iniciado com sucesso na porta ${PORT}`);
+    app.listen(PORT, () => console.log(`[SERVER] v2.0.7 (NTFY Resiliente) na porta ${PORT}`));
 };
 start();
