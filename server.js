@@ -189,12 +189,12 @@ const sendNtfyNative = (channel, title, body) => {
     });
 };
 
-// --- PUSH WORKER (NTFY-Only v2.1.0) ---
+// --- PUSH WORKER (NTFY-Only v2.1.1) ---
 const pushWorker = async () => {
     if (!pool) return;
     try {
         const [toSend] = await pool.execute(
-            "SELECT * FROM scheduled_notifications WHERE sent = 0 AND scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
+            "SELECT n.*, u.email FROM scheduled_notifications n JOIN users u ON n.user_id = u.id WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
         );
 
         if (toSend.length > 0) {
@@ -202,7 +202,7 @@ const pushWorker = async () => {
         }
 
         for (const item of toSend) {
-            const ntfyChannel = `jw_assistant_${item.user_id}`;
+            const ntfyChannel = `jw_assistant_${item.email}`;
             try {
                 await sendNtfyNative(ntfyChannel, item.title, item.body);
                 ntfyLog(`Sucesso NTFY: ${ntfyChannel} (${item.title})`);
@@ -222,7 +222,7 @@ setInterval(pushWorker, 60000);
 app.get('/api/ping', (req, res) => {
     res.json({
         status: 'alive',
-        version: 'v2.1.0',
+        version: 'v2.1.1',
         engine: 'NTFY-Only',
         node: process.version,
         time_utc: new Date().toISOString()
@@ -262,7 +262,7 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    await ntfyLog(`[BOOT] Servidor v2.1.0 (NTFY-Only) iniciado na porta ${PORT}`);
-    app.listen(PORT, () => console.log(`[SERVER] v2.1.0 na porta ${PORT}`));
+    await ntfyLog(`[BOOT] Servidor v2.1.1 (NTFY-Email) iniciado na porta ${PORT}`);
+    app.listen(PORT, () => console.log(`[SERVER] v2.1.1 na porta ${PORT}`));
 };
 start();
