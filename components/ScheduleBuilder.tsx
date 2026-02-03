@@ -312,17 +312,30 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   const toggleNotification = async (index: number) => {
     if (!schedule) return;
 
+    const newSchedule = [...schedule];
+    const item = newSchedule[index];
+
     // Se está tentando ativar, pede permissão primeiro
-    if (!schedule[index].notificationEnabled) {
+    if (!item.notificationEnabled) {
       const granted = await requestNotificationPermission();
       if (!granted) {
         alert("Você precisa permitir as notificações no navegador para ativar os alertas.");
         return;
       }
+
+      // NOVO v1.7.5: Registrar este aparelho no banco de dados da Hostinger
+      try {
+        const configRes = await fetch('/api/push_config.php');
+        const { publicKey } = await configRes.json();
+        const success = await syncAdapter.subscribeUser(publicKey);
+        if (success) {
+          console.log("[PUSH] Aparelho registrado com sucesso no servidor.");
+        }
+      } catch (e) {
+        console.warn("[PUSH] Erro ao registrar assinatura no servidor:", e);
+      }
     }
 
-    const newSchedule = [...schedule];
-    const item = newSchedule[index];
     item.notificationEnabled = !item.notificationEnabled;
 
     // Se ativou e tem horário, agenda imediatamente

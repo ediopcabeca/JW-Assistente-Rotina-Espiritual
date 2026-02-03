@@ -6,15 +6,19 @@ require_once __DIR__ . '/push_config.php';
 $user = verifyToken();
 $userId = $user ? $user['id'] : null;
 
-// Bypass para teste manual se o usuário não estiver logado no navegador Safari
-if (!$userId && isset($_GET['debug_key']) && $_GET['debug_key'] === 'jw_debug_123') {
-    // Tenta pegar o último usuário registrado para teste
+// Bypass para teste manual
+if (isset($_GET['debug_key']) && $_GET['debug_key'] === 'jw_debug_123') {
     $stmt = $pdo->query("SELECT user_id FROM push_subscriptions ORDER BY created_at DESC LIMIT 1");
-    $userId = $stmt->fetchColumn();
+    $foundId = $stmt->fetchColumn();
+    if ($foundId) {
+        $userId = $foundId;
+    } else {
+        respond(["status" => "error", "message" => "O banco de dados de aparelhos (push_subscriptions) está vazio. Você precisa ativar o Sino Azul no app primeiro."], 200);
+    }
 }
 
 if (!$userId)
-    respond(["status" => "error", "message" => "Não autorizado. Faça login no app ou use a chave de depuração."], 401);
+    respond(["status" => "error", "message" => "Não autorizado. Certifique-se de usar o link com ?debug_key=jw_debug_123 ou estar logado."], 401);
 
 try {
     // Busca uma subscrição válida
