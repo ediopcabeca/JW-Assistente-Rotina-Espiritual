@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => {
           { src: 'icon.png', dest: '.' },
           { src: 'api/*', dest: 'api' },
           { src: '.htaccess', dest: '.' },
+          { src: '.env', dest: '.' },
           { src: 'server.js', dest: '.' },
           { src: 'package.json', dest: '.' }
         ]

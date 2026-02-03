@@ -39,20 +39,21 @@ app.use(cors());
 // 2. Database Connection
 let pool = null;
 const initConnection = async () => {
-    if (!process.env.DB_HOST) {
-        console.warn("[DB] AVISO: DB_HOST não definido.");
-        return null;
-    }
     try {
-        const p = mysql.createPool({
-            host: process.env.DB_HOST,
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD,
-            database: process.env.DB_NAME,
+        // Fallbacks para Hostinger se o .env falhar
+        const config = {
+            host: process.env.DB_HOST || 'localhost',
+            user: process.env.DB_USER || 'u875922357_admin',
+            password: process.env.DB_PASSWORD || process.env.DB_PASS || 'Mp07gp24',
+            database: process.env.DB_NAME || 'u875922357_jwapp',
             waitForConnections: true,
-            connectionLimit: 10
-        });
-        await p.execute('SELECT 1');
+            connectionLimit: 10,
+            queueLimit: 0,
+            enableKeepAlive: true,
+            keepAliveInitialDelay: 0
+        };
+        const p = mysql.createPool(config);
+        await p.execute('SELECT 1'); // Test connection
         console.log("[DB] OK: Conexão com MySQL estabelecida.");
 
         // Tabelas Core
@@ -62,6 +63,9 @@ const initConnection = async () => {
         // Tabelas de Push (Versão Node.js)
         await p.execute(`CREATE TABLE IF NOT EXISTS push_subscriptions (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, endpoint TEXT NOT NULL, p256dh VARCHAR(255) NOT NULL, auth VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, endpoint(191)), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)`);
         await p.execute(`CREATE TABLE IF NOT EXISTS scheduled_notifications (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, activity_index INT NOT NULL, title VARCHAR(255) NOT NULL, body TEXT NOT NULL, scheduled_time DATETIME NOT NULL, sent TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, activity_index, scheduled_time), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)`);
+
+        // Tabela de Logs (v2.0.4)
+        await p.execute(`CREATE TABLE IF NOT EXISTS system_logs (id INT AUTO_INCREMENT PRIMARY KEY, level VARCHAR(50) NOT NULL, message TEXT NOT NULL, timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
 
         return p;
     } catch (err) {
@@ -259,7 +263,7 @@ setInterval(pushWorker, 60000);
 app.get('/api/ping', (req, res) => {
     res.json({
         status: 'alive',
-        version: 'v2.0.4',
+        version: 'v2.0.6',
         node: process.version,
         time_utc: new Date().toISOString()
     });
@@ -298,7 +302,7 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    await ntfyLog(`[BOOT] Servidor v2.0.5 iniciado com sucesso na porta ${PORT}`);
-    app.listen(PORT, () => console.log(`[SERVER] v2.0.5 (NTFY Resiliente) na porta ${PORT}`));
+    await ntfyLog(`[BOOT] Servidor v2.0.6 iniciado com sucesso na porta ${PORT}`);
+    app.listen(PORT, () => console.log(`[SERVER] v2.0.6 (NTFY Resiliente) na porta ${PORT}`));
 };
 start();
