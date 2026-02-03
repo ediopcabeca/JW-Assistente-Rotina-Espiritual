@@ -178,20 +178,20 @@ app.get('/api/push_test_v2.php', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Função de Log para Depuração na Hostinger (v2.0.3)
-const ntfyLog = (msg) => {
+// Função de Log para Depuração no Banco de Dados (v2.0.4)
+const ntfyLog = async (msg, level = 'info') => {
     try {
-        const logMsg = `[${new Date().toISOString()}] ${msg}\n`;
-        fs.appendFileSync(path.join(__dirname, 'push_log.txt'), logMsg);
+        if (pool) await pool.execute("INSERT INTO system_logs (level, message) VALUES (?, ?)", [level, msg]);
+        console.log(`[LOG] ${msg}`);
     } catch (e) {
-        console.error("Erro ao gravar log:", e.message);
+        console.error("Erro ao gravar log no DB:", e.message);
     }
 };
 
 // Função Robust v2.0.2 para disparar NTFY sem depender de fetch
 const sendNtfyNative = (channel, title, body) => {
     return new Promise((resolve, reject) => {
-        const data = body;
+        const data = String(body);
         const options = {
             hostname: 'ntfy.sh',
             port: 443,
@@ -209,10 +209,11 @@ const sendNtfyNative = (channel, title, body) => {
 
         const req = https.request(options, (res) => {
             if (res.statusCode === 200) resolve();
-            else reject(new Error(`Status: ${res.statusCode}`));
+            else reject(new Error(`HTTP ${res.statusCode}`));
         });
 
         req.on('error', (e) => reject(e));
+        req.setTimeout(5000, () => { req.destroy(); reject(new Error('Timeout 5s')); });
         req.write(data);
         req.end();
     });
@@ -258,9 +259,8 @@ setInterval(pushWorker, 60000);
 app.get('/api/ping', (req, res) => {
     res.json({
         status: 'alive',
-        version: 'v2.0.1',
+        version: 'v2.0.4',
         node: process.version,
-        fetch_exists: typeof fetch !== 'undefined',
         time_utc: new Date().toISOString()
     });
 });
@@ -270,9 +270,13 @@ app.get('/api/ntfy_test.php', async (req, res) => {
     const userId = req.query.user_id || '999';
     const channel = `jw_assistant_${userId}`;
     try {
-        await sendNtfyNative(channel, 'JW Assistente ✅', 'Teste v2.0.3 Manual via Node.js');
-        res.json({ status: "Enviado v2.0.3", channel: channel });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        await sendNtfyNative(channel, 'JW Assistente ✅', 'Teste v2.0.4 Manual via Node.js');
+        await ntfyLog(`Teste manual v2.0.4 disparado para ${channel}`);
+        res.json({ status: "Enviado v2.0.4", channel: channel });
+    } catch (err) {
+        await ntfyLog(`FALHA Teste Manual: ${err.message}`, 'error');
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // GATILHO MANUAL DO WORKER v2.0.3
