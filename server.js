@@ -298,6 +298,7 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    app.listen(PORT, () => console.log(`[SERVER] v2.0.3 (NTFY Resiliente) na porta ${PORT}`));
+    await ntfyLog(`[BOOT] Servidor v2.0.5 iniciado com sucesso na porta ${PORT}`);
+    app.listen(PORT, () => console.log(`[SERVER] v2.0.5 (NTFY Resiliente) na porta ${PORT}`));
 };
 start();

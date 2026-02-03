@@ -13,13 +13,13 @@
     </IfModule>
   </FilesMatch>
 
+  # Ignora a pasta API - deixa o PHP rodar normal (Importante para diagnóstico)
+  RewriteRule ^api/ - [L]
+
   # Se o arquivo existe (ex: imagem, arquivo php), serve ele
   RewriteCond %{REQUEST_FILENAME} -f
   RewriteRule ^ - [L]
 
-  # Se for API e não for um arquivo existente, deixa o Node.js cuidar através do index.html ou proxy
-  # Na Hostinger Node.js, o servidor costuma capturar o tráfego se não for arquivo estático.
-  
   # Caso contrário, manda tudo para o index.html (React handles routing)
   RewriteRule ^ index.html [L]
 </IfModule>
