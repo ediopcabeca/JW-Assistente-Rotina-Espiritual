@@ -1,9 +1,10 @@
 <?php
-// api/ntfy_test.php - v1.9.2 Fallback
+// api/ntfy_test.php - v1.9.3 Universal Test
 header('Content-Type: application/json');
 
 $userId = isset($_GET['user_id']) ? $_GET['user_id'] : '1';
-$channel = "jw_assistant_" . $userId;
+$customTopic = isset($_GET['topic']) ? $_GET['topic'] : null;
+$channel = $customTopic ? $customTopic : "jw_assistant_" . $userId;
 $title = "JW Assistente ✅ (PHP Fallback)";
 $message = "Teste de Notificação NTFY funcionando via PHP!";
 

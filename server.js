@@ -185,6 +185,8 @@ const pushWorker = async () => {
             "SELECT n.*, s.endpoint, s.p256dh, s.auth FROM scheduled_notifications n LEFT JOIN push_subscriptions s ON n.user_id = s.user_id WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
         );
 
+        if (toSend.length > 0) console.log(`[WORKER] Processando ${toSend.length} notificações...`);
+
         for (const item of toSend) {
             await pool.execute("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?", [item.id]);
 
@@ -208,11 +210,15 @@ const pushWorker = async () => {
                     'Priority': 'high',
                     'Tags': 'bell,calendar'
                 }
-            }).catch(e => console.error("[NTFY] Falha:", e.message));
+            }).then(() => console.log(`[NTFY] Enviado com sucesso para ${ntfyChannel}`))
+                .catch(e => console.error("[NTFY] Falha:", e.message));
         }
     } catch (e) { console.error("[WORKER ERRO]", e.message); }
 };
 setInterval(pushWorker, 60000);
+
+// --- PING ---
+app.get('/api/ping', (req, res) => res.json({ status: 'alive', version: 'v1.9.9', time: new Date().toISOString() }));
 
 // --- TESTE NTFY DIRETO ---
 app.get('/api/ntfy_test.php', async (req, res) => {
@@ -239,6 +245,6 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    app.listen(PORT, () => console.log(`[SERVER] v1.9.2 (NTFY Ativado) na porta ${PORT}`));
+    app.listen(PORT, () => console.log(`[SERVER] v2.0.0 (NTFY Resiliente) na porta ${PORT}`));
 };
 start();
