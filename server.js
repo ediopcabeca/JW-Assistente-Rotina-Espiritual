@@ -148,9 +148,16 @@ app.get('/api/push_fetch.php', authenticate, async (req, res) => {
 });
 
 
+// --- CAIXA PRETA v2.1.2 (Para ler erros se o Node não ligar) ---
+const logFile = path.join(__dirname, 'node_boot.log');
+const bootLog = (m) => fs.appendFileSync(logFile, `[${new Date().toISOString()}] ${m}\n`);
+process.on('uncaughtException', (e) => bootLog(`FATAL EXCEPTION: ${e.message}\n${e.stack}`));
+process.on('unhandledRejection', (e) => bootLog(`FATAL REJECTION: ${e.message}`));
+
 // Função de Log para Depuração no Banco de Dados (v2.0.4)
 const ntfyLog = async (msg, level = 'info') => {
     try {
+        bootLog(`[DBLOG] ${msg}`);
         if (pool) await pool.execute("INSERT INTO system_logs (level, message) VALUES (?, ?)", [level, msg]);
         console.log(`[LOG] ${msg}`);
     } catch (e) {
@@ -292,9 +299,19 @@ app.get("*", (req, res) => {
 
 // START
 const start = async () => {
-    pool = await initConnection();
-    aiSetup();
-    await ntfyLog(`[BOOT] Servidor v2.1.2 (NTFY-Safe) iniciado na porta ${PORT}`);
-    app.listen(PORT, () => console.log(`[SERVER] v2.1.2 na porta ${PORT}`));
+    bootLog("Tentando iniciar servidor v2.1.2...");
+    try {
+        pool = await initConnection();
+        bootLog("Conexão DB OK");
+        aiSetup();
+        bootLog("IA Setup OK");
+        await ntfyLog(`[BOOT] Servidor v2.1.2 (NTFY-Safe) iniciado na porta ${PORT}`);
+        app.listen(PORT, () => {
+            console.log(`[SERVER] v2.1.2 na porta ${PORT}`);
+            bootLog(`ESCUTANDO NA PORTA ${PORT}`);
+        });
+    } catch (e) {
+        bootLog(`ERRO NO START: ${e.message}`);
+    }
 };
 start();
