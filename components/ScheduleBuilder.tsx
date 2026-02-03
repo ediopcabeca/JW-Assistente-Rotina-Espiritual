@@ -181,7 +181,7 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     return false;
   };
 
-  const scheduleNotification = (item: ScheduleItem, index: number) => {
+  const scheduleNotification = async (item: ScheduleItem, index: number) => {
     if (!weekStartDate || !item.notificationTime) return;
     const startOfWeek = parseDate(weekStartDate);
     const targetDate = new Date(startOfWeek);
@@ -191,31 +191,60 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     const now = new Date();
     const timeUntil = targetDate.getTime() - now.getTime();
 
-    if (timeUntil > 0 && timeUntil < 2147483647) {
-      console.log(`Notificação agendada para ${item.activity} em ${timeUntil}ms`);
-      const timeoutId = window.setTimeout(() => {
-        if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-          navigator.serviceWorker.ready.then(registration => {
+    if (timeUntil > 0) {
+      console.log(`[PUSH] Agendando "${item.activity}" para ${targetDate.toLocaleString()}`);
+
+      if ('serviceWorker' in navigator && Notification.permission === 'granted') {
+        const registration = await navigator.serviceWorker.ready;
+
+        try {
+          // API de Gatilhos (Notification Triggers)
+          // Isso permite que o sistema operacional dispare a notificação no horário, mesmo com o app fechado.
+          const options: any = {
+            body: item.focus,
+            icon: '/icon.png',
+            tag: `jw-notification-${index}`,
+            badge: '/icon.png',
+            vibrate: [200, 100, 200],
+            showTrigger: new (window as any).TimestampTrigger(targetDate.getTime()),
+            actions: [
+              { action: 'open_app', title: 'Ver no App' },
+              { action: 'snooze_1h', title: 'Adiar 1h' }
+            ]
+          };
+          await registration.showNotification(`Lembrete JW: ${item.activity}`, options);
+          console.log("[PUSH] Notificação agendada via Gatilho do Sistema.");
+        } catch (e) {
+          // Fallback para agendamento em memória se o dispositivo não suportar o gatilho nativo
+          console.log("[PUSH] Gatilhos nativos não suportados, usando temporizador interno.");
+          const timeoutId = window.setTimeout(() => {
             registration.showNotification(`Lembrete JW: ${item.activity}`, {
               body: item.focus,
               icon: '/icon.png',
               tag: `jw-notification-${index}`,
-              badge: '/icon.png',
-              vibrate: [200, 100, 200],
-              actions: [
-                { action: 'open_app', title: 'Ver no App' },
-                { action: 'snooze_1h', title: 'Adiar 1h' }
-              ]
+              vibrate: [200, 100, 200]
             } as any);
-          });
-        } else {
-          new Notification(`Lembrete JW: ${item.activity}`, {
-            body: item.focus,
-            tag: `jw-notification-${index}`
-          });
+          }, timeUntil);
+          notificationTimeouts.current.push(timeoutId);
         }
-      }, timeUntil);
-      notificationTimeouts.current.push(timeoutId);
+      }
+    }
+  };
+
+  const testNotification = async () => {
+    const granted = await requestNotificationPermission();
+    if (!granted) {
+      alert("Permissão de notificação negada.");
+      return;
+    }
+
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      reg.showNotification("Teste de Alerta JW", {
+        body: "Se você viu isso, as notificações estão funcionando!",
+        icon: '/icon.png',
+        vibrate: [100, 50, 100]
+      } as any);
     }
   };
 
@@ -284,14 +313,23 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-8">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-colors">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
-            <Calendar size={24} />
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+              <Calendar size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Organizador Semanal</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Crie uma rotina equilibrada para suas atividades espirituais.</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Organizador Semanal</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Crie uma rotina equilibrada para suas atividades espirituais.</p>
-          </div>
+          <button
+            onClick={testNotification}
+            className="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
+            title="Testar Notificações"
+          >
+            <RefreshCw size={20} />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

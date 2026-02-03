@@ -1,5 +1,5 @@
-// sw.js - v1.5.0 (Force Cache Update)
-const CACHE_NAME = 'jw-assistant-v2';
+// sw.js - v1.6.0 (Force Cache Update + Notification Triggers)
+const CACHE_NAME = 'jw-assistant-v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
