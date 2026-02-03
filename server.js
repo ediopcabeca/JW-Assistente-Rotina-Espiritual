@@ -9,6 +9,7 @@ import jwt from 'jsonwebtoken';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import webPush from 'web-push';
 import https from 'https';
+import fs from 'fs';
 
 // Configurações Iniciais
 dotenv.config();
@@ -177,10 +178,9 @@ app.get('/api/push_test_v2.php', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Função de Log para Depuração na Hostinger (v2.0.2)
+// Função de Log para Depuração na Hostinger (v2.0.3)
 const ntfyLog = (msg) => {
     try {
-        const fs = require('fs');
         const logMsg = `[${new Date().toISOString()}] ${msg}\n`;
         fs.appendFileSync(path.join(__dirname, 'push_log.txt'), logMsg);
     } catch (e) {
@@ -270,8 +270,16 @@ app.get('/api/ntfy_test.php', async (req, res) => {
     const userId = req.query.user_id || '999';
     const channel = `jw_assistant_${userId}`;
     try {
-        await sendNtfyNative(channel, 'JW Assistente ✅', 'Teste v2.0.2 Manual via Node.js');
-        res.json({ status: "Enviado v2.0.2", channel: channel });
+        await sendNtfyNative(channel, 'JW Assistente ✅', 'Teste v2.0.3 Manual via Node.js');
+        res.json({ status: "Enviado v2.0.3", channel: channel });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// GATILHO MANUAL DO WORKER v2.0.3
+app.get('/api/trigger_worker', async (req, res) => {
+    try {
+        await pushWorker();
+        res.json({ status: 'Worker triggered', time: new Date().toISOString() });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -286,6 +294,6 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    app.listen(PORT, () => console.log(`[SERVER] v2.0.2 (NTFY Resiliente) na porta ${PORT}`));
+    app.listen(PORT, () => console.log(`[SERVER] v2.0.3 (NTFY Resiliente) na porta ${PORT}`));
 };
 start();
