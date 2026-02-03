@@ -13,8 +13,8 @@
     </IfModule>
   </FilesMatch>
 
-  # Ignora a pasta API - deixa o PHP rodar normal (Importante para diagnóstico)
-  RewriteRule ^api/ - [L]
+  # Ignora a pasta API e DIAG - deixa o PHP rodar normal
+  RewriteRule ^(api|diag)/ - [L]
 
   # Se o arquivo existe (ex: imagem, arquivo php), serve ele
   RewriteCond %{REQUEST_FILENAME} -f

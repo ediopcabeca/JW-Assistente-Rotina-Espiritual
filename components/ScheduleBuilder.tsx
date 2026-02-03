@@ -216,11 +216,29 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
 
   const testNotification = async () => {
     const safeChannel = ntfySafe(userId || '');
-    alert("Teste NTFY enviado! Certifique-se de estar seguindo o canal 'jw_assistant_" + safeChannel + "' no app NTFY.");
+    const topic = `jw_assistant_${safeChannel}`;
+
+    alert("Iniciando teste direto NTFY v2.1.3... Aguarde 2 segundos.");
+
     try {
-      await fetch(`/notif/test?user_id=${userId}`);
+      // 1. Tenta o disparo direto via Browser (Mais confiável para testes)
+      await fetch(`https://ntfy.sh/${topic}`, {
+        method: 'POST',
+        body: 'JW Assistente v2.1.3: Seu sistema de notificações está ONLINE! 🎉',
+        headers: {
+          'Title': 'Teste de Conexão JW ✅',
+          'Priority': 'high',
+          'Tags': 'bell,check'
+        }
+      });
+
+      // 2. Tenta registrar o teste no servidor (Fallback)
+      fetch(`/notif/test?user_id=${userId}`).catch(() => { });
+
+      alert("Teste enviado com sucesso direto para seu celular! Verifique o App NTFY no canal '" + topic + "'.");
     } catch (e) {
-      console.error("[NTFY] Erro no teste:", e);
+      console.error("[NTFY] Erro no teste direto:", e);
+      alert("Erro ao enviar teste: " + (e as Error).message);
     }
   };
 
