@@ -1,5 +1,5 @@
-// sw.js - v1.6.0 (Force Cache Update + Notification Triggers)
-const CACHE_NAME = 'jw-assistant-v3';
+// sw.js - v1.6.1 (Force Cache Update + Real Web Push)
+const CACHE_NAME = 'jw-assistant-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -17,13 +17,39 @@ self.addEventListener('notificationclick', (event) => {
   notification.close();
 
   if (action === 'snooze_1h') {
-    // Para simplificar na web sem backend de push, o "adiar" abre o app 
-    // para que o app possa reagendar localmente ou apenas foca no app.
     event.waitUntil(openApp('/?action=snooze&id=' + notification.tag));
   } else {
-    // Ação padrão: apenas abrir/focar no app
     event.waitUntil(openApp('/'));
   }
+});
+
+// Handle real push notifications from server
+self.addEventListener('push', (event) => {
+  let data = { title: 'Lembrete JW', body: 'É hora da sua atividade espiritual!' };
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: '/icon.png',
+    badge: '/icon.png',
+    vibrate: [200, 100, 200],
+    data: data.url || '/',
+    tag: data.tag || 'jw-push-notification',
+    actions: [
+      { action: 'open_app', title: 'Ver' },
+      { action: 'close', title: 'Fechar' }
+    ]
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
 });
 
 async function openApp(url) {

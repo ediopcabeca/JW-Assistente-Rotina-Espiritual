@@ -238,10 +238,26 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
       return;
     }
 
+    try {
+      // Obter chave pública do servidor
+      const configRes = await fetch('/api/push_config.php');
+      const { publicKey } = await configRes.json();
+
+      // Inscrever no sistema de Push do Servidor (Web Push real)
+      const subscribed = await syncAdapter.subscribeUser(publicKey);
+      if (!subscribed) {
+        console.warn('[PUSH] Falha ao registrar no servidor, mas tentaremos alerta local.');
+      } else {
+        console.log('[PUSH] Dispositivo registrado para alertas em segundo plano.');
+      }
+    } catch (e) {
+      console.error('[PUSH] Erro ao configurar push real:', e);
+    }
+
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.ready;
       reg.showNotification("Teste de Alerta JW", {
-        body: "Se você viu isso, as notificações estão funcionando!",
+        body: "Se você viu isso, as notificações básicas estão funcionando! v1.6.1",
         icon: '/icon.png',
         vibrate: [100, 50, 100]
       } as any);

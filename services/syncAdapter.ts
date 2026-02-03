@@ -1,9 +1,9 @@
 /**
  * syncAdapter.ts
- * Gerencia a sincronização de dados entre o LocalStorage e o Banco de Dados MySQL (Backend)
+ * Gerencia a sincronização de dados e subscrições de Push
  */
 
-const API_BASE = ''; // PHP usa caminhos relativos na Hostinger
+const API_BASE = '';
 
 export const syncAdapter = {
     /**
@@ -30,32 +30,27 @@ export const syncAdapter = {
             const { sync_data } = await response.json();
             if (!sync_data) return false;
 
-            // Mesclagem Inteligente (Merge)
             Object.entries(sync_data).forEach(([key, value]) => {
                 if (key.startsWith('jw_')) {
                     const localValueNode = localStorage.getItem(key);
                     const remoteValueString = typeof value === 'string' ? value : JSON.stringify(value);
 
-                    // 1. Caso especial: Capítulos lidos (Merge de listas para evitar perda)
                     if (key === 'jw_bible_read_chapters' && localValueNode) {
                         try {
                             const localList = JSON.parse(localValueNode) as string[];
                             const remoteList = JSON.parse(remoteValueString) as string[];
-                            // União das listas (Set remove duplicatas)
                             const mergedList = Array.from(new Set([...localList, ...remoteList]));
                             localStorage.setItem(key, JSON.stringify(mergedList));
                             return;
                         } catch (e) {
-                            console.error('[SYNC] Falha ao mesclar lista de capítulos:', e);
+                            console.error('[SYNC] Falha ao mesclar capítulos:', e);
                         }
                     }
-
-                    // 2. Outras chaves: Sobrescrita simples (ou pode-se adicionar mais regras depois)
                     localStorage.setItem(key, remoteValueString);
                 }
             });
 
-            console.log('[SYNC] Dados mesclados do servidor com sucesso.');
+            console.log('[SYNC] Dados mesclados com sucesso.');
             return true;
         } catch (error) {
             console.error('[SYNC] Erro ao puxar dados:', error);
@@ -64,7 +59,7 @@ export const syncAdapter = {
     },
 
     /**
-     * Envia todos os dados locais que começam com 'jw_' para o servidor
+     * Envia todos os dados locais
      */
     pushUserData: async () => {
         const token = localStorage.getItem('jw_auth_token');
@@ -88,13 +83,10 @@ export const syncAdapter = {
                 body: JSON.stringify({ sync_data: allLocalData })
             });
 
-            if (response.status === 401 || response.status === 403) {
-                throw new Error('AUTH_ERROR');
-            }
-
+            if (response.status === 401 || response.status === 403) throw new Error('AUTH_ERROR');
             if (!response.ok) throw new Error('SERVER_ERROR');
 
-            console.log('[SYNC] Backup realizado no servidor.');
+            console.log('[SYNC] Backup realizado.');
             return true;
         } catch (error: any) {
             console.error('[SYNC] Erro ao enviar backup:', error);
@@ -103,11 +95,46 @@ export const syncAdapter = {
     },
 
     /**
-     * Inicializa a sincronização (chama pull ao logar ou abrir o app)
+     * Inicializa a sincronização
      */
     initializeUser: async () => {
         if (syncAdapter.isAvailable()) {
             await syncAdapter.pullUserData();
+        }
+    },
+
+    /**
+     * Inscreve o usuário no sistema de Web Push Real
+     */
+    subscribeUser: async (publicKey: string) => {
+        const token = localStorage.getItem('jw_auth_token');
+        if (!token || !('serviceWorker' in navigator)) return false;
+
+        try {
+            const registration = await navigator.serviceWorker.ready;
+
+            let subscription = await registration.pushManager.getSubscription();
+
+            if (!subscription) {
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: publicKey
+                });
+            }
+
+            const response = await fetch('/api/push_sub.php', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(subscription)
+            });
+
+            return response.ok;
+        } catch (error) {
+            console.error('[PUSH] Erro na subscrição:', error);
+            return false;
         }
     }
 };

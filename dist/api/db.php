@@ -55,6 +55,7 @@ try {
     $pdo->exec("CREATE TABLE IF NOT EXISTS app_settings (s_key VARCHAR(50) PRIMARY KEY, s_value TEXT) ENGINE=InnoDB;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS bible_highlights (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, chapters VARCHAR(255) NOT NULL, content LONGTEXT NOT NULL, audio_content LONGTEXT, is_read TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(user_id, chapters), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_discourses (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, material LONGTEXT, scriptures VARCHAR(255), time_min VARCHAR(10), resources TEXT, full_text LONGTEXT NOT NULL, summary LONGTEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
+    $pdo->exec("CREATE TABLE IF NOT EXISTS push_subscriptions (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, endpoint TEXT NOT NULL, p256dh VARCHAR(255) NOT NULL, auth VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, endpoint(191)), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE) ENGINE=InnoDB;");
 
     // Upgrade de colunas para quem já tinha o banco criado com limites menores
     $pdo->exec("ALTER TABLE user_data MODIFY COLUMN sync_data LONGTEXT;");
