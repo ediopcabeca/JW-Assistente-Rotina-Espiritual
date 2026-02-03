@@ -2,14 +2,10 @@
 // api/get_my_id.php - v1.9.4
 header('Content-Type: application/json');
 
-// Tenta carregar credenciais do db.php ou variáveis de ambiente
-$db_host = getenv('DB_HOST');
-$db_user = getenv('DB_USER');
-$db_pass = getenv('DB_PASSWORD');
-$db_name = getenv('DB_NAME');
-
 try {
-    $pdo = new PDO("mysql:host=$db_host;dbname=$db_name", $db_user, $db_pass);
+    require_once __DIR__ . '/db.php';
+    global $pdo;
+
     $stmt = $pdo->query("SELECT id, email FROM users");
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
