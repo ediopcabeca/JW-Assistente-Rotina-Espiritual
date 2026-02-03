@@ -1,5 +1,5 @@
-// sw.js - v1.7.2 (Authenticated Push-to-Fetch)
-const CACHE_NAME = 'jw-assistant-v12';
+// sw.js - v1.7.3 (iOS Resilience + Background Fallback)
+const CACHE_NAME = 'jw-assistant-v13';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -15,21 +15,24 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Função auxiliar para pegar o token do IndexedDB
-function getToken() {
-  return new Promise((resolve) => {
-    const request = indexedDB.open("JWAssistantDB", 1);
-    request.onsuccess = (e) => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains("auth")) return resolve(null);
-      const tx = db.transaction("auth", "readonly");
-      const store = tx.objectStore("auth");
-      const getReq = store.get("token");
-      getReq.onsuccess = () => resolve(getReq.result);
-      getReq.onerror = () => resolve(null);
-    };
-    request.onerror = () => resolve(null);
-  });
+async function getToken() {
+  try {
+    return await new Promise((resolve) => {
+      const request = indexedDB.open("JWAssistantDB", 1);
+      request.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains("auth")) return resolve(null);
+        const tx = db.transaction("auth", "readonly");
+        const store = tx.objectStore("auth");
+        const getReq = store.get("token");
+        getReq.onsuccess = () => resolve(getReq.result);
+        getReq.onerror = () => resolve(null);
+      };
+      request.onerror = () => resolve(null);
+    });
+  } catch (e) {
+    return null;
+  }
 }
 
 self.addEventListener('notificationclick', (event) => {
@@ -45,36 +48,44 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-  event.waitUntil(
-    getToken().then(token => {
-      if (!token) {
-        console.warn("[SW] Token não encontrado no IndexedDB.");
-        return self.registration.showNotification('Lembrete JW', {
-          body: 'Você tem uma atividade agendada! (Abra o app para ver)',
-          icon: '/icon.png',
-          requireInteraction: true
-        });
-      }
+  console.log("[SW] Push recebido.");
 
-      return fetch('/api/push_fetch.php', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 'success') {
-            return self.registration.showNotification(data.title, {
-              body: data.body,
-              icon: '/icon.png',
-              badge: '/icon.png',
-              vibrate: [200, 100, 200],
-              requireInteraction: true
-            });
-          }
-        });
-    }).catch(err => {
-      console.error("[SW] Falha ao processar push:", err);
+  const showNotification = (title, body) => {
+    return self.registration.showNotification(title || 'Lembrete JW', {
+      body: body || 'Você tem uma atividade agendada agora!',
+      icon: '/icon.png',
+      badge: '/icon.png',
+      vibrate: [200, 100, 200],
+      requireInteraction: true,
+      data: { url: '/' }
+    });
+  };
+
+  const promise = getToken().then(token => {
+    if (!token) return showNotification();
+
+    // Tenta buscar os dados reais, mas com timeout curto para o iOS não matar o SW
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    return fetch('/api/push_fetch.php', {
+      headers: { 'Authorization': `Bearer ${token}` },
+      signal: controller.signal
     })
-  );
+      .then(res => res.json())
+      .then(data => {
+        clearTimeout(timeout);
+        if (data.status === 'success') {
+          return showNotification(data.title, data.body);
+        }
+        return showNotification();
+      })
+      .catch(() => {
+        return showNotification(); // Fallback genérico se tudo falhar
+      });
+  });
+
+  event.waitUntil(promise);
 });
 
 self.addEventListener('fetch', (event) => {
