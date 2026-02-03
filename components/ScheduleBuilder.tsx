@@ -231,27 +231,29 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   };
 
   const testNotification = async () => {
+    console.log("[PUSH] Iniciando teste de notificação...");
     const granted = await requestNotificationPermission();
     if (!granted) {
-      alert("Permissão de notificação negada.");
+      alert("Permissão de notificação negada no navegador.");
       return;
     }
 
-    try {
-      const configRes = await fetch('/api/push_config.php');
-      const { publicKey } = await configRes.json();
-      await syncAdapter.subscribeUser(publicKey);
-    } catch (e) {
-      console.error('[PUSH] Erro ao configurar push real:', e);
-    }
-
     if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.ready;
-      reg.showNotification("Teste de Alerta JW", {
-        body: "Se você viu isso, as notificações básicas voltaram a funcionar! v1.6.4",
-        icon: '/icon.png',
-        vibrate: [100, 50, 100]
-      } as any);
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification("Teste de Alerta JW", {
+          body: "Se você viu isso, o sistema visual está OK! v1.6.5",
+          icon: '/icon.png',
+          requireInteraction: true,
+          vibrate: [100, 50, 100]
+        } as any);
+        console.log("[PUSH] Notificação de teste enviada.");
+      } catch (err) {
+        console.error("[PUSH] Erro ao disparar teste:", err);
+        alert("Erro ao disparar alerta: " + err);
+      }
+    } else {
+      alert("Service Worker não suportado neste navegador.");
     }
   };
 
