@@ -180,7 +180,6 @@ app.get('/api/push_test_v2.php', async (req, res) => {
 const pushWorker = async () => {
     if (!pool) return;
     try {
-        // Busca notificações que atingiram o horário (usando UTC)
         const [toSend] = await pool.execute(
             "SELECT n.*, s.endpoint, s.p256dh, s.auth FROM scheduled_notifications n LEFT JOIN push_subscriptions s ON n.user_id = s.user_id WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
         );
@@ -188,37 +187,47 @@ const pushWorker = async () => {
         if (toSend.length > 0) console.log(`[WORKER] Processando ${toSend.length} notificações...`);
 
         for (const item of toSend) {
-            await pool.execute("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?", [item.id]);
+            const ntfyChannel = `jw_assistant_${item.user_id}`;
+            let success = false;
 
-            // 1. Tenta Web Push (Nativo) se houver subscrição
-            if (item.endpoint) {
-                const sub = {
-                    endpoint: item.endpoint,
-                    keys: { p256dh: item.p256dh, auth: item.auth }
-                };
-                webPush.sendNotification(sub, "").catch(() => { });
+            // 1. DISPARO NTFY (Prioridade Total)
+            try {
+                // Tenta usar fetch global (Node 18+)
+                const res = await fetch(`https://ntfy.sh/${ntfyChannel}`, {
+                    method: 'POST',
+                    body: `${item.title}: ${item.body}`,
+                    headers: { 'Title': item.title, 'Priority': 'high', 'Tags': 'bell' }
+                });
+                if (res.ok) success = true;
+            } catch (ntfyErr) {
+                console.error("[NTFY] Falha no disparo automático:", ntfyErr.message);
             }
 
-            // 2. DISPARO NTFY (Opção 2 - Novo Padrão)
-            // Canal Sugerido: jw_assistant_<user_id> (ex: jw_assistant_1)
-            const ntfyChannel = `jw_assistant_${item.user_id}`;
-            fetch(`https://ntfy.sh/${ntfyChannel}`, {
-                method: 'POST',
-                body: `${item.title}: ${item.body}`,
-                headers: {
-                    'Title': item.title,
-                    'Priority': 'high',
-                    'Tags': 'bell,calendar'
-                }
-            }).then(() => console.log(`[NTFY] Enviado com sucesso para ${ntfyChannel}`))
-                .catch(e => console.error("[NTFY] Falha:", e.message));
+            // 2. Tenta Web Push como Backup
+            if (item.endpoint) {
+                const sub = { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } };
+                webPush.sendNotification(sub, "").catch(() => { });
+                // Consideramos sucesso se NTFY funcionar ou se enviamos para o worker disparar
+            }
+
+            // ATUALIZA STATUS SOMENTE SE TENTOU ENVIAR
+            await pool.execute("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?", [item.id]);
+            console.log(`[WORKER] Notificação ${item.id} marcada como enviada (Sucesso: ${success})`);
         }
     } catch (e) { console.error("[WORKER ERRO]", e.message); }
 };
 setInterval(pushWorker, 60000);
 
 // --- PING ---
-app.get('/api/ping', (req, res) => res.json({ status: 'alive', version: 'v1.9.9', time: new Date().toISOString() }));
+app.get('/api/ping', (req, res) => {
+    res.json({
+        status: 'alive',
+        version: 'v2.0.1',
+        node: process.version,
+        fetch_exists: typeof fetch !== 'undefined',
+        time_utc: new Date().toISOString()
+    });
+});
 
 // --- TESTE NTFY DIRETO ---
 app.get('/api/ntfy_test.php', async (req, res) => {
@@ -245,6 +254,6 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    app.listen(PORT, () => console.log(`[SERVER] v2.0.0 (NTFY Resiliente) na porta ${PORT}`));
+    app.listen(PORT, () => console.log(`[SERVER] v2.0.1 (NTFY Resiliente) na porta ${PORT}`));
 };
 start();
