@@ -1,0 +1,35 @@
+<?php
+// api/ntfy_test.php - v1.9.3 Universal Test
+header('Content-Type: application/json');
+
+$userId = isset($_GET['user_id']) ? $_GET['user_id'] : '1';
+$customTopic = isset($_GET['topic']) ? $_GET['topic'] : null;
+$channel = $customTopic ? $customTopic : "jw_assistant_" . $userId;
+
+// Sanitização v2.1.2 (Remove @ e outros especiais)
+$channel = preg_replace('/[^a-zA-Z0-9]/', '_', $channel);
+
+$title = "JW Assistente ✅ (PHP Fallback)";
+$message = "Teste de Notificação NTFY funcionando via PHP!";
+
+$ch = curl_init("https://ntfy.sh/" . $channel);
+curl_setopt($ch, CURLOPT_POST, 1);
+curl_setopt($ch, CURLOPT_POSTFIELDS, $message);
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    "Title: " . $title,
+    "Priority: high",
+    "Tags: bell,check"
+]);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+$response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+
+echo json_encode([
+    "status" => $httpCode == 200 ? "success" : "error",
+    "http_code" => $httpCode,
+    "channel" => $channel,
+    "message" => "Se o seu celular tocou, o sistema está pronto!"
+]);
+?>
