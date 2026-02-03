@@ -2,23 +2,24 @@
 // api/map_files.php
 header('Content-Type: text/plain');
 
-function listDir($dir, $prefix = '')
+function listDir($dir, $prefix = '', $maxDepth = 3)
 {
-    $files = scandir($dir);
+    if ($maxDepth < 0)
+        return;
+    $files = @scandir($dir);
+    if (!$files)
+        return;
     foreach ($files as $file) {
         if ($file === '.' || $file === '..')
             continue;
         $path = $dir . '/' . $file;
-        echo $prefix . $file . (is_dir($path) ? '/' : '') . " (" . date("Y-m-d H:i:s", filemtime($path)) . ")\n";
-        if (is_dir($path) && substr_count($prefix, '  ') < 2) { // Profundidade 2
-            listDir($path, $prefix . '  ');
+        echo $prefix . $file . (is_dir($path) ? '/' : '') . " (" . @date("Y-m-d H:i:s", @filemtime($path)) . ")\n";
+        if (is_dir($path)) {
+            listDir($path, $prefix . '  ', $maxDepth - 1);
         }
     }
 }
 
-echo "--- MAPEAMENTO DE DIRETÓRIOS ---\n\n";
-echo "Ponto Inicial (api/): " . __DIR__ . "\n";
-echo "Raiz (../): " . realpath(__DIR__ . '/../') . "\n\n";
-
-listDir(realpath(__DIR__ . '/../'));
+echo "--- MAPEAMENTO PROFUNDO ---\n\n";
+listDir(realpath(__DIR__ . '/../../')); // Sobe dois níveis para ver tudo
 ?>
