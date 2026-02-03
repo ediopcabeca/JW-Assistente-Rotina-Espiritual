@@ -43,6 +43,32 @@ try {
         }
     }
 
+    // --- GATILHO DE TESTE NTFY v2.1.2 ---
+    if (isset($_GET['test_ntfy'])) {
+        $email = isset($_GET['email']) ? $_GET['email'] : 'ediopereira1978@hotmail.com';
+        $topic = "jw_assistant_" . $email;
+        $safeChannel = preg_replace('/[^a-zA-Z0-9]/', '_', $topic);
+
+        $ch = curl_init("https://ntfy.sh/" . $safeChannel);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "Sinal v2.1.2 via Audit Trigger em " . $times['local_now']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Title: JW Audit ✅", "Priority: high"]);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $res = curl_exec($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        die(json_encode(["test_result" => "sent", "channel" => $safeChannel, "http_code" => $code, "response" => $res]));
+    }
+
+    // --- AUDITORIA DE SINCRONIA ---
+    $files_audit = [
+        "api_folder" => scandir(__DIR__),
+        "root_folder" => scandir(__DIR__ . '/..'),
+        "diag_exists" => is_dir(__DIR__ . '/../diag') ? "SIM" : "NÃO",
+        "inspect_exists" => file_exists(__DIR__ . '/inspect.php') ? "SIM" : "NÃO"
+    ];
+
     echo json_encode([
         "status" => "success",
         "v2.1.2_sync" => true,
@@ -50,7 +76,8 @@ try {
         "system_logs" => $system_logs,
         "hostinger_internal_logs" => $hostinger_logs,
         "next_to_send" => $next_notifications,
-        "recently_sent" => $sent_notifications
+        "recently_sent" => $sent_notifications,
+        "files_audit" => $files_audit
     ]);
 } catch (Exception $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
