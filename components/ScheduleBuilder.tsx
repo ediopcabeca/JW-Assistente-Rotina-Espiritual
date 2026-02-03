@@ -238,11 +238,19 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
       return;
     }
 
+    try {
+      const configRes = await fetch('/api/push_config.php');
+      const { publicKey } = await configRes.json();
+      await syncAdapter.subscribeUser(publicKey);
+    } catch (e) {
+      console.warn("[PUSH] Falha no registro do servidor.");
+    }
+
     if ('serviceWorker' in navigator) {
       try {
         const reg = await navigator.serviceWorker.ready;
         await reg.showNotification("Teste de Alerta JW", {
-          body: "Se você viu isso, o sistema visual está OK! v1.6.5",
+          body: "Se você viu isso, o sistema visual está OK! v1.6.6",
           icon: '/icon.png',
           requireInteraction: true,
           vibrate: [100, 50, 100]
@@ -250,10 +258,7 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
         console.log("[PUSH] Notificação de teste enviada.");
       } catch (err) {
         console.error("[PUSH] Erro ao disparar teste:", err);
-        alert("Erro ao disparar alerta: " + err);
       }
-    } else {
-      alert("Service Worker não suportado neste navegador.");
     }
   };
 
