@@ -288,23 +288,28 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   };
 
   const toggleNotification = async (index: number) => {
-    if (!schedule) return;
-    if (!schedule[index].notificationEnabled) {
-      const granted = await requestNotificationPermission();
-      if (!granted) return;
-    }
     const newSchedule = [...schedule];
-    newSchedule[index] = {
-      ...newSchedule[index],
-      notificationEnabled: !newSchedule[index].notificationEnabled
-    };
+    const item = newSchedule[index];
+    item.notificationEnabled = !item.notificationEnabled;
+
+    // Se ativou e tem horário, agenda imediatamente
+    if (item.notificationEnabled && item.notificationTime) {
+      scheduleNotification(item, index);
+    }
+
     setSchedule(newSchedule);
   };
 
   const handleTimeChange = (index: number, time: string) => {
-    if (!schedule) return;
     const newSchedule = [...schedule];
-    newSchedule[index] = { ...newSchedule[index], notificationTime: time };
+    const item = newSchedule[index];
+    item.notificationTime = time;
+
+    // Se já estiver com o sino ativo, re-agenda com o novo horário
+    if (item.notificationEnabled && time) {
+      scheduleNotification(item, index);
+    }
+
     setSchedule(newSchedule);
   };
 
