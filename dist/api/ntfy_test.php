@@ -5,6 +5,10 @@ header('Content-Type: application/json');
 $userId = isset($_GET['user_id']) ? $_GET['user_id'] : '1';
 $customTopic = isset($_GET['topic']) ? $_GET['topic'] : null;
 $channel = $customTopic ? $customTopic : "jw_assistant_" . $userId;
+
+// Sanitização v2.1.2 (Remove @ e outros especiais)
+$channel = preg_replace('/[^a-zA-Z0-9]/', '_', $channel);
+
 $title = "JW Assistente ✅ (PHP Fallback)";
 $message = "Teste de Notificação NTFY funcionando via PHP!";
 
