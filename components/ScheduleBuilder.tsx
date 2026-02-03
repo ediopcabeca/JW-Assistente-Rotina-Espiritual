@@ -191,20 +191,22 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
 
       try {
         const token = localStorage.getItem('jw_auth_token');
-        if (token) {
-          fetch('/api/push_schedule.php', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              index: index,
-              title: `Lembrete JW: ${item.activity}`,
-              body: item.focus,
-              scheduled_time: targetDate.toISOString().slice(0, 19).replace('T', ' ')
-            })
-          });
+        const isoString = targetDate.toISOString(); // Define isoString here
+        const response = await fetch('/notif/schedule', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userId,
+            index,
+            title: `Lembrete JW: ${item.activity}`,
+            body: item.focus || item.activity,
+            scheduled_time: isoString.slice(0, 19).replace('T', ' ')
+          })
+        });
+        if (!response.ok) {
+          console.error("[NTFY] Falha ao registrar agendamento no servidor:", response.statusText);
         }
       } catch (e) {
         console.warn("[NTFY] Falha ao registrar agendamento no servidor:", e);
@@ -216,7 +218,7 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     const safeChannel = ntfySafe(userId || '');
     alert("Teste NTFY enviado! Certifique-se de estar seguindo o canal 'jw_assistant_" + safeChannel + "' no app NTFY.");
     try {
-      await fetch(`/api/ntfy_test.php?user_id=${userId}`);
+      await fetch(`/notif/test?user_id=${userId}`);
     } catch (e) {
       console.error("[NTFY] Erro no teste:", e);
     }

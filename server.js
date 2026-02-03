@@ -247,6 +247,34 @@ app.get('/api/ntfy_test.php', async (req, res) => {
     }
 });
 
+// --- ROTAS DE ESCAPE v2.1.2 (Fugindo do conflito de diretório 'api' na Hostinger) ---
+app.get('/notif/test', async (req, res) => {
+    const userId = req.query.user_id || '999';
+    // O canal aqui já vem sanitizado pelo sendNtfyNative
+    try {
+        await sendNtfyNative(`jw_assistant_${userId}`, 'JW Assistente ✅', 'Teste v2.1.2 via Node.js (Escape Route)');
+        res.json({ status: "success", channel: ntfySafe(`jw_assistant_${userId}`) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/notif/schedule', async (req, res) => {
+    const { user_id, index, title, body, scheduled_time } = req.body;
+    if (!user_id || index === undefined || !title || !body || !scheduled_time) {
+        return res.status(400).json({ error: "Faltam campos" });
+    }
+    try {
+        await pool.execute(
+            "INSERT INTO scheduled_notifications (user_id, activity_index, title, body, scheduled_time) VALUES ((SELECT id FROM users WHERE email = ?), ?, ?, ?, ?) ON DUPLICATE KEY UPDATE title=VALUES(title), body=VALUES(body), scheduled_time=VALUES(scheduled_time), sent=0",
+            [user_id, index, title, body, scheduled_time]
+        );
+        res.json({ status: "success" });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // GATILHO MANUAL DO WORKER v2.0.3
 app.get('/api/trigger_worker', async (req, res) => {
     try {

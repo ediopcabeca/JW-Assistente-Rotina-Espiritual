@@ -45,6 +45,7 @@ try {
 
     echo json_encode([
         "status" => "success",
+        "v2.1.2_sync" => true,
         "server_times" => $times,
         "system_logs" => $system_logs,
         "hostinger_internal_logs" => $hostinger_logs,
