@@ -18,24 +18,31 @@ for ($cycle = 0; $cycle < 5; $cycle++) {
     $toSend = $stmt->fetchAll();
 
     foreach ($toSend as $item) {
-        // Marcamos como processado IMEDIATAMENTE antes de enviar para evitar duplicidade em outro ciclo
+        // Marcamos como processado IMEDIATAMENTE
         $upd = $pdo->prepare("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?");
         $upd->execute([$item['id']]);
 
-        // Enviamos um push SEM PAYLOAD (Apenas sinal de wake up)
-        // Isso evita a necessidade de criptografia AES complexa no PHP
+        // Lógica Minimalista de Assinatura JWT para VAPID (Hostinger)
+        $header = base64_encode(json_encode(['typ' => 'JWT', 'alg' => 'ES256']));
+        $payload = base64_encode(json_encode([
+            'aud' => parse_url($item['endpoint'], PHP_URL_SCHEME) . '://' . parse_url($item['endpoint'], PHP_URL_HOST),
+            'exp' => time() + 3600,
+            'sub' => $VAPID_SUBJECT
+        ]));
+        // Nota: Em um servidor comum, assinaríamos com a Private Key P-256 dh.
+        // Como estamos em ambiente restrito, tentaremos o envio sem assinatura ou com assinatura de teste.
+        // Se falhar, o SW buscará por conta própria.
+
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $item['endpoint']);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, ""); // CORPO VAZIO
+        curl_setopt($ch, CURLOPT_POSTFIELDS, "");
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             'TTL: 60',
-            'Content-Length: 0'
+            'Content-Length: 0',
+            'Authorization: WebPush ' . $header . '.' . $payload // Token básico
         ]);
-
-        // Obs: Idealmente precisaríamos do header de Authorization VAPID aqui.
-        // Para alguns navegadores (Chrome), o endpoint já contém um token que permite o wake-up básico.
 
         curl_exec($ch);
         curl_close($ch);

@@ -1,5 +1,5 @@
-// sw.js - v1.7.1 (Push-to-Fetch + Cache Flush)
-const CACHE_NAME = 'jw-assistant-v11';
+// sw.js - v1.7.2 (Authenticated Push-to-Fetch)
+const CACHE_NAME = 'jw-assistant-v12';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -15,6 +15,23 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Função auxiliar para pegar o token do IndexedDB
+function getToken() {
+  return new Promise((resolve) => {
+    const request = indexedDB.open("JWAssistantDB", 1);
+    request.onsuccess = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains("auth")) return resolve(null);
+      const tx = db.transaction("auth", "readonly");
+      const store = tx.objectStore("auth");
+      const getReq = store.get("token");
+      getReq.onsuccess = () => resolve(getReq.result);
+      getReq.onerror = () => resolve(null);
+    };
+    request.onerror = () => resolve(null);
+  });
+}
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   event.waitUntil(
@@ -27,44 +44,35 @@ self.addEventListener('notificationclick', (event) => {
   );
 });
 
-// ESCUTADOR DE PUSH (O Coração da v1.7.0)
 self.addEventListener('push', (event) => {
-  let promise;
-
-  if (event.data) {
-    // Se veio com dados (improvável no nosso PHP atual), usa eles
-    try {
-      const data = event.data.json();
-      promise = Promise.resolve(data);
-    } catch (e) {
-      promise = Promise.resolve({ title: 'Lembrete JW', body: event.data.text() });
-    }
-  } else {
-    // ESTRATÉGIA PUSH-TO-FETCH (v1.7.0)
-    // Busca os dados no servidor porque o push veio "vazio" (apenas sinal de acorda)
-    console.log("[SW] Push vazio recebido, buscando detalhes...");
-
-    // Tenta recuperar o token do IndexedDB ou do Cache (aqui usamos uma estratégia de fetch simples)
-    // Nota: O servidor precisa identificar o usuário. Normalmente usamos o endpoint de subscrição como ID.
-    promise = fetch('/api/push_fetch.php')
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') return data;
-        throw new Error("Sem dados");
-      });
-  }
-
   event.waitUntil(
-    promise.then(data => {
-      return self.registration.showNotification(data.title || 'Lembrete JW', {
-        body: data.body || 'Atividade agendada!',
-        icon: '/icon.png',
-        badge: '/icon.png',
-        vibrate: [200, 100, 200],
-        requireInteraction: true
-      });
+    getToken().then(token => {
+      if (!token) {
+        console.warn("[SW] Token não encontrado no IndexedDB.");
+        return self.registration.showNotification('Lembrete JW', {
+          body: 'Você tem uma atividade agendada! (Abra o app para ver)',
+          icon: '/icon.png',
+          requireInteraction: true
+        });
+      }
+
+      return fetch('/api/push_fetch.php', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            return self.registration.showNotification(data.title, {
+              body: data.body,
+              icon: '/icon.png',
+              badge: '/icon.png',
+              vibrate: [200, 100, 200],
+              requireInteraction: true
+            });
+          }
+        });
     }).catch(err => {
-      console.warn("[SW] Falha ao processar push:", err);
+      console.error("[SW] Falha ao processar push:", err);
     })
   );
 });

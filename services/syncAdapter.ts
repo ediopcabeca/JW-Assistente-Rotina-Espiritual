@@ -10,7 +10,23 @@ export const syncAdapter = {
      * Verifica se o usuário está autenticado para sincronizar
      */
     isAvailable: () => {
-        return !!localStorage.getItem('jw_auth_token');
+        const token = localStorage.getItem('jw_auth_token');
+        if (token) {
+            // Espelha o token no IndexedDB para o Service Worker acessar
+            const request = indexedDB.open("JWAssistantDB", 1);
+            request.onupgradeneeded = (e: any) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains("auth")) {
+                    db.createObjectStore("auth");
+                }
+            };
+            request.onsuccess = (e: any) => {
+                const db = e.target.result;
+                const tx = db.transaction("auth", "readwrite");
+                tx.objectStoreStore("auth").put(token, "token");
+            };
+        }
+        return !!token;
     },
 
     /**
