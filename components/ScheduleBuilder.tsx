@@ -221,14 +221,14 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     alert("Iniciando teste direto NTFY v2.1.3... Aguarde 2 segundos.");
 
     try {
-      // 1. Tenta o disparo direto via Browser (Mais confiável para testes)
+      // 1. Tenta o disparo direto via Browser (Headers simplificados para evitar TypeError)
       await fetch(`https://ntfy.sh/${topic}`, {
         method: 'POST',
-        body: 'JW Assistente v2.1.3: Seu sistema de notificações está ONLINE! 🎉',
+        body: 'JW Assistente v2.1.4: Seu sistema de notificações está ONLINE! 🎉✅',
         headers: {
-          'Title': 'Teste de Conexão JW ✅',
+          'Title': 'Teste de Conexao JW',
           'Priority': 'high',
-          'Tags': 'bell,check'
+          'Tags': 'bell'
         }
       });
 
