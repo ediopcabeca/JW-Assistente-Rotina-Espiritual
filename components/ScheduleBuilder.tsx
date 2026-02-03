@@ -250,7 +250,7 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
       try {
         const reg = await navigator.serviceWorker.ready;
         await reg.showNotification("Teste de Alerta JW", {
-          body: "Se você viu isso, o sistema visual está OK! v1.6.6",
+          body: "Se você viu isso, o sistema visual está OK! v1.6.8",
           icon: '/icon.png',
           requireInteraction: true,
           vibrate: [100, 50, 100]
@@ -288,6 +288,17 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   };
 
   const toggleNotification = async (index: number) => {
+    if (!schedule) return;
+
+    // Se está tentando ativar, pede permissão primeiro
+    if (!schedule[index].notificationEnabled) {
+      const granted = await requestNotificationPermission();
+      if (!granted) {
+        alert("Você precisa permitir as notificações no navegador para ativar os alertas.");
+        return;
+      }
+    }
+
     const newSchedule = [...schedule];
     const item = newSchedule[index];
     item.notificationEnabled = !item.notificationEnabled;
@@ -452,7 +463,7 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
                       )}
                       <button
                         onClick={() => toggleNotification(index)}
-                        className={`p-2 rounded-full transition-all ${item.notificationEnabled ? 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                        className={`p-2 rounded-full transition-all ${item.notificationEnabled ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                       >
                         {item.notificationEnabled ? <BellRing size={20} /> : <Bell size={20} />}
                       </button>
