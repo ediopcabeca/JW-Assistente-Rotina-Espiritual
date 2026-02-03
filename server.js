@@ -177,6 +177,17 @@ app.get('/api/push_test_v2.php', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Função de Log para Depuração na Hostinger (v2.0.2)
+const ntfyLog = (msg) => {
+    try {
+        const fs = require('fs');
+        const logMsg = `[${new Date().toISOString()}] ${msg}\n`;
+        fs.appendFileSync(path.join(__dirname, 'push_log.txt'), logMsg);
+    } catch (e) {
+        console.error("Erro ao gravar log:", e.message);
+    }
+};
+
 // Função Robust v2.0.2 para disparar NTFY sem depender de fetch
 const sendNtfyNative = (channel, title, body) => {
     return new Promise((resolve, reject) => {
@@ -187,7 +198,8 @@ const sendNtfyNative = (channel, title, body) => {
             path: `/${channel}`,
             method: 'POST',
             headers: {
-                'Title': title,
+                'Title': Buffer.from(title).toString('base64'),
+                'X-Title': 'base64',
                 'Priority': 'high',
                 'Tags': 'bell',
                 'Content-Type': 'text/plain',
@@ -214,21 +226,20 @@ const pushWorker = async () => {
             "SELECT n.*, s.endpoint, s.p256dh, s.auth FROM scheduled_notifications n LEFT JOIN push_subscriptions s ON n.user_id = s.user_id WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
         );
 
-        if (toSend.length > 0) console.log(`[WORKER] Processando ${toSend.length} notificações...`);
+        if (toSend.length > 0) {
+            ntfyLog(`Processando ${toSend.length} notificações...`);
+        }
 
         for (const item of toSend) {
             const ntfyChannel = `jw_assistant_${item.user_id}`;
-            console.log(`[WORKER] Disparando ID ${item.id} para ${ntfyChannel}...`);
-
-            // 1. DISPARO NTFY (Motor Nativo v2.0.2)
             try {
                 await sendNtfyNative(ntfyChannel, item.title, item.body);
-                console.log(`[NTFY] Sucesso v2.0.2: ${ntfyChannel}`);
+                ntfyLog(`Sucesso: ${ntfyChannel} (${item.title})`);
             } catch (ntfyErr) {
+                ntfyLog(`FALHA: ${ntfyChannel} - ${ntfyErr.message}`);
                 console.error("[NTFY] Falha v2.0.2:", ntfyErr.message);
             }
 
-            // 2. Backup Web Push
             if (item.endpoint) {
                 const sub = { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } };
                 webPush.sendNotification(sub, "").catch(() => { });
@@ -236,7 +247,10 @@ const pushWorker = async () => {
 
             await pool.execute("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?", [item.id]);
         }
-    } catch (e) { console.error("[WORKER ERRO]", e.message); }
+    } catch (e) {
+        ntfyLog(`ERRO WORKER: ${e.message}`);
+        console.error("[WORKER ERRO]", e.message);
+    }
 };
 setInterval(pushWorker, 60000);
 
