@@ -317,7 +317,7 @@ const App: React.FC = () => {
                     <span className="w-7 h-7 bg-[#5a3696] rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-[10px]">JW</span>
                     <span className="truncate">Assistente</span>
                   </h1>
-                  <span className="text-[9px] text-gray-400 dark:text-gray-500 font-black flex-shrink-0 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">v1.6.0</span>
+                  <span className="text-[9px] text-gray-400 dark:text-gray-500 font-black flex-shrink-0 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">v1.6.1</span>
                 </div>
                 <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 dark:bg-gray-900/40 rounded-md border border-gray-100 dark:border-gray-800 w-full overflow-hidden">
                   <User size={12} className="text-gray-400 flex-shrink-0" />
