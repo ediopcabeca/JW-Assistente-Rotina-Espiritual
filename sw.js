@@ -1,5 +1,5 @@
-// sw.js - v1.6.1 (Force Cache Update + Real Web Push)
-const CACHE_NAME = 'jw-assistant-v4';
+// sw.js - v1.6.3 (Force Cache Update + Persistent Notifications)
+const CACHE_NAME = 'jw-assistant-v5';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -39,6 +39,7 @@ self.addEventListener('push', (event) => {
     icon: '/icon.png',
     badge: '/icon.png',
     vibrate: [200, 100, 200],
+    requireInteraction: true, // FAZ A NOTIFICAÇÃO FICAR PARADA NA TELA
     data: data.url || '/',
     tag: data.tag || 'jw-push-notification',
     actions: [

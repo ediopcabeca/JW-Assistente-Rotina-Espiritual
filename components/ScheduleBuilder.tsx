@@ -206,6 +206,7 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
             tag: `jw-notification-${index}`,
             badge: '/icon.png',
             vibrate: [200, 100, 200],
+            requireInteraction: true,
             showTrigger: new (window as any).TimestampTrigger(targetDate.getTime()),
             actions: [
               { action: 'open_app', title: 'Ver no App' },
@@ -222,6 +223,7 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
               body: item.focus,
               icon: '/icon.png',
               tag: `jw-notification-${index}`,
+              requireInteraction: true,
               vibrate: [200, 100, 200]
             } as any);
           }, timeUntil);
@@ -257,8 +259,9 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     if ('serviceWorker' in navigator) {
       const reg = await navigator.serviceWorker.ready;
       reg.showNotification("Teste de Alerta JW", {
-        body: "Se você viu isso, as notificações básicas estão funcionando! v1.6.1",
+        body: "Se você viu isso, as notificações básicas estão funcionando! v1.6.3",
         icon: '/icon.png',
+        requireInteraction: true,
         vibrate: [100, 50, 100]
       } as any);
     }
