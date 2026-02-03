@@ -180,17 +180,53 @@ app.get('/api/push_test_v2.php', async (req, res) => {
 const pushWorker = async () => {
     if (!pool) return;
     try {
+        // Busca notificações que atingiram o horário (usando UTC)
         const [toSend] = await pool.execute(
-            "SELECT n.*, s.endpoint, s.p256dh, s.auth FROM scheduled_notifications n JOIN push_subscriptions s ON n.user_id = s.user_id WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
+            "SELECT n.*, s.endpoint, s.p256dh, s.auth FROM scheduled_notifications n LEFT JOIN push_subscriptions s ON n.user_id = s.user_id WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
         );
+
         for (const item of toSend) {
             await pool.execute("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?", [item.id]);
-            const sub = { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } };
-            webPush.sendNotification(sub, "").catch(() => { }); // Wake up call
+
+            // 1. Tenta Web Push (Nativo) se houver subscrição
+            if (item.endpoint) {
+                const sub = {
+                    endpoint: item.endpoint,
+                    keys: { p256dh: item.p256dh, auth: item.auth }
+                };
+                webPush.sendNotification(sub, "").catch(() => { });
+            }
+
+            // 2. DISPARO NTFY (Opção 2 - Novo Padrão)
+            // Canal Sugerido: jw_assistant_<user_id> (ex: jw_assistant_1)
+            const ntfyChannel = `jw_assistant_${item.user_id}`;
+            fetch(`https://ntfy.sh/${ntfyChannel}`, {
+                method: 'POST',
+                body: `${item.title}: ${item.body}`,
+                headers: {
+                    'Title': item.title,
+                    'Priority': 'high',
+                    'Tags': 'bell,calendar'
+                }
+            }).catch(e => console.error("[NTFY] Falha:", e.message));
         }
     } catch (e) { console.error("[WORKER ERRO]", e.message); }
 };
 setInterval(pushWorker, 60000);
+
+// --- TESTE NTFY DIRETO ---
+app.get('/api/ntfy_test.php', async (req, res) => {
+    const userId = req.query.user_id || '999';
+    const channel = `jw_assistant_${userId}`;
+    try {
+        await fetch(`https://ntfy.sh/${channel}`, {
+            method: 'POST',
+            body: 'Teste de Notificação NTFY funcionando!',
+            headers: { 'Title': 'JW Assistente ✅', 'Priority': 'high' }
+        });
+        res.json({ status: "Enviado para NTFY", channel: channel, hint: "Abra o link https://ntfy.sh/" + channel + " para ver" });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
 
 // --- STATIC & SPA ---
 app.use(express.static(distPath));
@@ -203,6 +239,6 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    app.listen(PORT, () => console.log(`[SERVER] v1.8.1 Rodando na porta ${PORT}`));
+    app.listen(PORT, () => console.log(`[SERVER] v1.9.0 (NTFY Ativado) na porta ${PORT}`));
 };
 start();
