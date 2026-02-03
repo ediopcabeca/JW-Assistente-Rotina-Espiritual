@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import webPush from 'web-push';
+import https from 'https';
 
 // Configurações Iniciais
 dotenv.config();
@@ -176,6 +177,35 @@ app.get('/api/push_test_v2.php', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// Função Robust v2.0.2 para disparar NTFY sem depender de fetch
+const sendNtfyNative = (channel, title, body) => {
+    return new Promise((resolve, reject) => {
+        const data = body;
+        const options = {
+            hostname: 'ntfy.sh',
+            port: 443,
+            path: `/${channel}`,
+            method: 'POST',
+            headers: {
+                'Title': title,
+                'Priority': 'high',
+                'Tags': 'bell',
+                'Content-Type': 'text/plain',
+                'Content-Length': Buffer.byteLength(data)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            if (res.statusCode === 200) resolve();
+            else reject(new Error(`Status: ${res.statusCode}`));
+        });
+
+        req.on('error', (e) => reject(e));
+        req.write(data);
+        req.end();
+    });
+};
+
 // --- PUSH WORKER ---
 const pushWorker = async () => {
     if (!pool) return;
@@ -188,31 +218,23 @@ const pushWorker = async () => {
 
         for (const item of toSend) {
             const ntfyChannel = `jw_assistant_${item.user_id}`;
-            let success = false;
+            console.log(`[WORKER] Disparando ID ${item.id} para ${ntfyChannel}...`);
 
-            // 1. DISPARO NTFY (Prioridade Total)
+            // 1. DISPARO NTFY (Motor Nativo v2.0.2)
             try {
-                // Tenta usar fetch global (Node 18+)
-                const res = await fetch(`https://ntfy.sh/${ntfyChannel}`, {
-                    method: 'POST',
-                    body: `${item.title}: ${item.body}`,
-                    headers: { 'Title': item.title, 'Priority': 'high', 'Tags': 'bell' }
-                });
-                if (res.ok) success = true;
+                await sendNtfyNative(ntfyChannel, item.title, item.body);
+                console.log(`[NTFY] Sucesso v2.0.2: ${ntfyChannel}`);
             } catch (ntfyErr) {
-                console.error("[NTFY] Falha no disparo automático:", ntfyErr.message);
+                console.error("[NTFY] Falha v2.0.2:", ntfyErr.message);
             }
 
-            // 2. Tenta Web Push como Backup
+            // 2. Backup Web Push
             if (item.endpoint) {
                 const sub = { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } };
                 webPush.sendNotification(sub, "").catch(() => { });
-                // Consideramos sucesso se NTFY funcionar ou se enviamos para o worker disparar
             }
 
-            // ATUALIZA STATUS SOMENTE SE TENTOU ENVIAR
             await pool.execute("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?", [item.id]);
-            console.log(`[WORKER] Notificação ${item.id} marcada como enviada (Sucesso: ${success})`);
         }
     } catch (e) { console.error("[WORKER ERRO]", e.message); }
 };
@@ -234,12 +256,8 @@ app.get('/api/ntfy_test.php', async (req, res) => {
     const userId = req.query.user_id || '999';
     const channel = `jw_assistant_${userId}`;
     try {
-        await fetch(`https://ntfy.sh/${channel}`, {
-            method: 'POST',
-            body: 'Teste de Notificação NTFY funcionando!',
-            headers: { 'Title': 'JW Assistente ✅', 'Priority': 'high' }
-        });
-        res.json({ status: "Enviado para NTFY", channel: channel, hint: "Abra o link https://ntfy.sh/" + channel + " para ver" });
+        await sendNtfyNative(channel, 'JW Assistente ✅', 'Teste v2.0.2 Manual via Node.js');
+        res.json({ status: "Enviado v2.0.2", channel: channel });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -254,6 +272,6 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    app.listen(PORT, () => console.log(`[SERVER] v2.0.1 (NTFY Resiliente) na porta ${PORT}`));
+    app.listen(PORT, () => console.log(`[SERVER] v2.0.2 (NTFY Resiliente) na porta ${PORT}`));
 };
 start();
