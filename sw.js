@@ -1,5 +1,5 @@
-// sw.js - v1.7.0 (Push-to-Fetch Strategy)
-const CACHE_NAME = 'jw-assistant-v10';
+// sw.js - v1.7.1 (Push-to-Fetch + Cache Flush)
+const CACHE_NAME = 'jw-assistant-v11';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
