@@ -1,30 +1,30 @@
-// sw.js - v1.6.3 (Force Cache Update + Persistent Notifications)
-const CACHE_NAME = 'jw-assistant-v5';
+// sw.js - v1.6.4 (Force Cache Update + Debug Logs)
+const CACHE_NAME = 'jw-assistant-v6';
 
 self.addEventListener('install', (event) => {
+  console.log('[SW] Instalado.');
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Ativado.');
   event.waitUntil(clients.claim());
 });
 
-// Handle notification click and actions
 self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notificação clicada:', event.action);
   const notification = event.notification;
-  const action = event.action;
-
   notification.close();
 
-  if (action === 'snooze_1h') {
+  if (event.action === 'snooze_1h') {
     event.waitUntil(openApp('/?action=snooze&id=' + notification.tag));
   } else {
     event.waitUntil(openApp('/'));
   }
 });
 
-// Handle real push notifications from server
 self.addEventListener('push', (event) => {
+  console.log('[SW] Evento Push recebido.');
   let data = { title: 'Lembrete JW', body: 'É hora da sua atividade espiritual!' };
   if (event.data) {
     try {
@@ -39,17 +39,14 @@ self.addEventListener('push', (event) => {
     icon: '/icon.png',
     badge: '/icon.png',
     vibrate: [200, 100, 200],
-    requireInteraction: true, // FAZ A NOTIFICAÇÃO FICAR PARADA NA TELA
+    // requireInteraction removido por segurança na v1.6.4
     data: data.url || '/',
-    tag: data.tag || 'jw-push-notification',
-    actions: [
-      { action: 'open_app', title: 'Ver' },
-      { action: 'close', title: 'Fechar' }
-    ]
+    tag: data.tag || 'jw-push-notification'
   };
 
   event.waitUntil(
     self.registration.showNotification(data.title, options)
+      .catch(err => console.error('[SW] Erro ao mostrar notificação:', err))
   );
 });
 
@@ -65,7 +62,6 @@ async function openApp(url) {
   }
 }
 
-// Basic fetch handler (Network first)
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request).catch(() => {
