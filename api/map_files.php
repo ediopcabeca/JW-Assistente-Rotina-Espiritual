@@ -14,19 +14,17 @@ function listDir($dir, $prefix = '', $maxDepth = 2)
             continue;
         $path = $dir . '/' . $file;
         echo $prefix . $file . (is_dir($path) ? '/' : '') . " (" . @date("Y-m-d H:i:s", @filemtime($path)) . ")\n";
-        if (is_dir($path) && $maxDepth > 0) {
+        if (is_dir($path) && $maxDepth > 0 && !in_array($file, ['node_modules', '.git'])) {
             listDir($path, $prefix . '  ', $maxDepth - 1);
         }
     }
 }
 
-$sourceDir = realpath(__DIR__ . '/../.builds/source');
-echo "--- CONTEÚDO DE .builds/source ---\n";
-if ($sourceDir)
-    listDir($sourceDir);
+$grandParent = realpath(__DIR__ . '/../../');
+echo "--- MAPEAMENTO DA RAIZ DA CONTA ---\n";
+echo "Dir: " . $grandParent . "\n\n";
+if ($grandParent)
+    listDir($grandParent);
 else
-    echo "Pasta .builds/source não encontrada.\n";
-
-echo "\n--- RAÍZ DO SITE ---\n";
-listDir(realpath(__DIR__ . '/../'), '', 1);
+    echo "Não foi possível subir dois níveis.\n";
 ?>
