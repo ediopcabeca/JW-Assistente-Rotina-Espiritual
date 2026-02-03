@@ -11,11 +11,11 @@ try {
     $times = $stmt_time->fetch();
 
     // 2. Próximas Notificações
-    $stmt_next = $pdo->query("SELECT n.*, u.email FROM scheduled_notifications n JOIN users u ON n.user_id = u.id WHERE n.sent = 0 ORDER BY n.scheduled_time ASC LIMIT 5");
+    $stmt_next = $pdo->query("SELECT n.*, u.email as ntfy_topic FROM scheduled_notifications n JOIN users u ON n.user_id = u.id WHERE n.sent = 0 ORDER BY n.scheduled_time ASC LIMIT 5");
     $next_notifications = $stmt_next->fetchAll(PDO::FETCH_ASSOC);
 
     // 3. Notificações Recém Enviadas
-    $stmt_sent = $pdo->query("SELECT n.*, u.email FROM scheduled_notifications n JOIN users u ON n.user_id = u.id WHERE n.sent = 1 ORDER BY n.scheduled_time DESC LIMIT 5");
+    $stmt_sent = $pdo->query("SELECT n.*, u.email as ntfy_topic FROM scheduled_notifications n JOIN users u ON n.user_id = u.id WHERE n.sent = 1 ORDER BY n.scheduled_time DESC LIMIT 5");
     $sent_notifications = $stmt_sent->fetchAll(PDO::FETCH_ASSOC);
 
     // 4. Logs do Sistema (v2.0.4)

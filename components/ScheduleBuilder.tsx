@@ -171,6 +171,8 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     return new Date(y, m - 1, d);
   };
 
+  const ntfySafe = (topic: string) => topic.replace(/[^a-zA-Z0-9]/g, '_');
+
   // Simplificado para NTFY v2.1.0 - Não pede mais permissão nativa
   const requestNotificationPermission = async () => true;
 
@@ -211,7 +213,8 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
   };
 
   const testNotification = async () => {
-    alert("Teste NTFY enviado! Certifique-se de estar seguindo o canal 'jw_assistant_" + userId + "' no app NTFY.");
+    const safeChannel = ntfySafe(userId || '');
+    alert("Teste NTFY enviado! Certifique-se de estar seguindo o canal 'jw_assistant_" + safeChannel + "' no app NTFY.");
     try {
       await fetch(`/api/ntfy_test.php?user_id=${userId}`);
     } catch (e) {

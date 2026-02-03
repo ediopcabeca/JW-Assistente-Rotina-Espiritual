@@ -158,14 +158,18 @@ const ntfyLog = async (msg, level = 'info') => {
     }
 };
 
+// Função para tornar o tópico NTFY seguro (sem @ ou .)
+const ntfySafe = (topic) => topic.replace(/[^a-zA-Z0-9]/g, '_');
+
 // Função Robust v2.0.2 para disparar NTFY sem depender de fetch
 const sendNtfyNative = (channel, title, body) => {
     return new Promise((resolve, reject) => {
+        const safeChannel = ntfySafe(channel);
         const data = String(body);
         const options = {
             hostname: 'ntfy.sh',
             port: 443,
-            path: `/${channel}`,
+            path: `/${safeChannel}`,
             method: 'POST',
             headers: {
                 'Title': Buffer.from(title).toString('base64'),
@@ -222,7 +226,7 @@ setInterval(pushWorker, 60000);
 app.get('/api/ping', (req, res) => {
     res.json({
         status: 'alive',
-        version: 'v2.1.1',
+        version: 'v2.1.2',
         engine: 'NTFY-Only',
         node: process.version,
         time_utc: new Date().toISOString()
@@ -262,7 +266,7 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    await ntfyLog(`[BOOT] Servidor v2.1.1 (NTFY-Email) iniciado na porta ${PORT}`);
-    app.listen(PORT, () => console.log(`[SERVER] v2.1.1 na porta ${PORT}`));
+    await ntfyLog(`[BOOT] Servidor v2.1.2 (NTFY-Safe) iniciado na porta ${PORT}`);
+    app.listen(PORT, () => console.log(`[SERVER] v2.1.2 na porta ${PORT}`));
 };
 start();
