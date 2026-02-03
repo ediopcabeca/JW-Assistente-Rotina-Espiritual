@@ -8,11 +8,11 @@ require_once __DIR__ . '/push_config.php';
 set_time_limit(290);
 
 for ($cycle = 0; $cycle < 5; $cycle++) {
-    // 1. Busca notificações pendentes que deveriam ter sido enviadas
+    // 1. Busca notificações pendentes usando UTC absoluto
     $stmt = $pdo->prepare("SELECT n.*, s.endpoint, s.p256dh, s.auth 
                            FROM scheduled_notifications n
                            JOIN push_subscriptions s ON n.user_id = s.user_id
-                           WHERE n.sent = 0 AND n.scheduled_time <= NOW()
+                           WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP()
                            LIMIT 50");
     $stmt->execute();
     $toSend = $stmt->fetchAll();
