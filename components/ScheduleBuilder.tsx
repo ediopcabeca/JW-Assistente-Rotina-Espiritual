@@ -171,15 +171,8 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     return new Date(y, m - 1, d);
   };
 
-  const requestNotificationPermission = async () => {
-    if (!("Notification" in window)) return false;
-    if (Notification.permission === "granted") return true;
-    if (Notification.permission !== "denied") {
-      const permission = await Notification.requestPermission();
-      return permission === "granted";
-    }
-    return false;
-  };
+  // Simplificado para NTFY v2.1.0 - Não pede mais permissão nativa
+  const requestNotificationPermission = async () => true;
 
   const scheduleNotification = async (item: ScheduleItem, index: number) => {
     if (!weekStartDate || !item.notificationTime) return;
@@ -192,9 +185,8 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     const timeUntil = targetDate.getTime() - now.getTime();
 
     if (timeUntil > 0) {
-      console.log(`[PUSH] Agendando "${item.activity}" para ${targetDate.toLocaleString()}`);
+      console.log(`[NTFY] Agendando "${item.activity}" para ${targetDate.toLocaleString()}`);
 
-      // NOVO v1.7.0: Registrar agendamento no servidor para garantir disparo com app fechado
       try {
         const token = localStorage.getItem('jw_auth_token');
         if (token) {
@@ -208,79 +200,22 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
               index: index,
               title: `Lembrete JW: ${item.activity}`,
               body: item.focus,
-              scheduled_time: targetDate.toISOString().slice(0, 19).replace('T', ' ') // Formato MySQL DATETIME
+              scheduled_time: targetDate.toISOString().slice(0, 19).replace('T', ' ')
             })
           });
         }
       } catch (e) {
-        console.warn("[PUSH] Falha ao registrar agendamento no servidor:", e);
-      }
-
-      if ('serviceWorker' in navigator && Notification.permission === 'granted') {
-        const registration = await navigator.serviceWorker.ready;
-
-        try {
-          // API de Gatilhos (Notification Triggers)
-          // Isso permite que o sistema operacional dispare a notificação no horário, mesmo com o app fechado.
-          const options: any = {
-            body: item.focus,
-            icon: '/icon.png',
-            tag: `jw-notification-${index}`,
-            badge: '/icon.png',
-            vibrate: [200, 100, 200],
-            showTrigger: new (window as any).TimestampTrigger(targetDate.getTime()),
-            actions: [
-              { action: 'open_app', title: 'Ver no App' },
-              { action: 'snooze_1h', title: 'Adiar 1h' }
-            ]
-          };
-          await registration.showNotification(`Lembrete JW: ${item.activity}`, options);
-          console.log("[PUSH] Notificação agendada via Gatilho do Sistema.");
-        } catch (e) {
-          console.log("[PUSH] Gatilhos nativos não suportados, usando temporizador interno.");
-          const timeoutId = window.setTimeout(() => {
-            registration.showNotification(`Lembrete JW: ${item.activity}`, {
-              body: item.focus,
-              icon: '/icon.png',
-              tag: `jw-notification-${index}`,
-              vibrate: [200, 100, 200]
-            } as any);
-          }, timeUntil);
-          notificationTimeouts.current.push(timeoutId);
-        }
+        console.warn("[NTFY] Falha ao registrar agendamento no servidor:", e);
       }
     }
   };
 
   const testNotification = async () => {
-    console.log("[PUSH] Iniciando teste de notificação...");
-    const granted = await requestNotificationPermission();
-    if (!granted) {
-      alert("Permissão de notificação negada no navegador.");
-      return;
-    }
-
+    alert("Teste NTFY enviado! Certifique-se de estar seguindo o canal 'jw_assistant_" + userId + "' no app NTFY.");
     try {
-      const configRes = await fetch('/api/push_config.php');
-      const { publicKey } = await configRes.json();
-      await syncAdapter.subscribeUser(publicKey);
+      await fetch(`/api/ntfy_test.php?user_id=${userId}`);
     } catch (e) {
-      console.warn("[PUSH] Falha no registro do servidor.");
-    }
-
-    if ('serviceWorker' in navigator) {
-      try {
-        const reg = await navigator.serviceWorker.ready;
-        await reg.showNotification("Teste de Alerta JW", {
-          body: "Se você viu isso, o sistema visual está OK! v1.6.8",
-          icon: '/icon.png',
-          requireInteraction: true,
-          vibrate: [100, 50, 100]
-        } as any);
-        console.log("[PUSH] Notificação de teste enviada.");
-      } catch (err) {
-        console.error("[PUSH] Erro ao disparar teste:", err);
-      }
+      console.error("[NTFY] Erro no teste:", e);
     }
   };
 
@@ -315,27 +250,9 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
     const newSchedule = [...schedule];
     const item = newSchedule[index];
 
-    // Se está tentando ativar, pede permissão primeiro
+    // Se está tentando ativar, o sistema v2.1.0 apenas avisa que o NTFY cuidará do lembrete
     if (!item.notificationEnabled) {
-      const granted = await requestNotificationPermission();
-      if (!granted) {
-        alert("Você precisa permitir as notificações no navegador para ativar os alertas.");
-        return;
-      }
-
-      // NOVO v1.7.5: Registrar este aparelho no banco de dados da Hostinger
-      try {
-        const configRes = await fetch('/api/push_config.php');
-        const { publicKey } = await configRes.json();
-        const success = await syncAdapter.subscribeUser(publicKey);
-        if (success) {
-          console.log("[PUSH] Aparelho registrado com sucesso no servidor.");
-        } else {
-          alert("Aviso: Não foi possível registrar as notificações em segundo plano neste aparelho. Tente desativar o modo de economia de energia.");
-        }
-      } catch (e) {
-        console.warn("[PUSH] Erro ao registrar assinatura no servidor:", e);
-      }
+      console.log("[NTFY] Ativando alerta via servidorda Hostinger.");
     }
 
     item.notificationEnabled = !item.notificationEnabled;

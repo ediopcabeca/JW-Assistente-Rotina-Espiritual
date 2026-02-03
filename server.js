@@ -7,7 +7,6 @@ import mysql from 'mysql2/promise';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import webPush from 'web-push';
 import https from 'https';
 import fs from 'fs';
 
@@ -16,17 +15,6 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distPath = path.resolve(__dirname, "dist");
-
-// Configuração VAPID (v1.8.1)
-// Usamos as mesmas chaves estáveis da v1.8.0
-const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || 'BG4VYkdzZ9ueo3Ry_8bomwBu_7iQ3WsVMzkaYkf91hVd5FZZj6Hoi2dwua92vdQbOd_9twskmZ4-E5HYIvnvPwA';
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || 'o6ZqmL5hvCPOyXFnnvHz54K5p-NnUis5sPqMZtXfAq4';
-
-webPush.setVapidDetails(
-    'mailto:ediopereira1978@hotmail.com',
-    VAPID_PUBLIC_KEY,
-    VAPID_PRIVATE_KEY
-);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,8 +48,7 @@ const initConnection = async () => {
         await p.execute(`CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY, email VARCHAR(255) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await p.execute(`CREATE TABLE IF NOT EXISTS user_data (user_id INT PRIMARY KEY, sync_data LONGTEXT, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)`);
 
-        // Tabelas de Push (Versão Node.js)
-        await p.execute(`CREATE TABLE IF NOT EXISTS push_subscriptions (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, endpoint TEXT NOT NULL, p256dh VARCHAR(255) NOT NULL, auth VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, endpoint(191)), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)`);
+        // Tabelas de Push (Versão NTFY-Only v2.1.0)
         await p.execute(`CREATE TABLE IF NOT EXISTS scheduled_notifications (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT NOT NULL, activity_index INT NOT NULL, title VARCHAR(255) NOT NULL, body TEXT NOT NULL, scheduled_time DATETIME NOT NULL, sent TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(user_id, activity_index, scheduled_time), FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE)`);
 
         // Tabela de Logs (v2.0.4)
@@ -133,18 +120,7 @@ app.post("/api/chat", async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Erro AI" }); }
 });
 
-// --- PUSH ENDPOINTS (v1.8.1) ---
-
-app.post('/api/push_sub.php', authenticate, async (req, res) => {
-    const { endpoint, keys } = req.body;
-    try {
-        await pool.execute(
-            "INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE p256dh = VALUES(p256dh), auth = VALUES(auth)",
-            [req.user.id, endpoint, keys.p256dh, keys.auth]
-        );
-        res.json({ status: 'success' });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
+// --- PUSH ENDPOINTS (NTFY-Only v2.1.0) ---
 
 app.post('/api/push_schedule.php', authenticate, async (req, res) => {
     const { index, title, body, scheduled_time } = req.body;
@@ -171,16 +147,6 @@ app.get('/api/push_fetch.php', authenticate, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/push_test_v2.php', async (req, res) => {
-    if (req.query.debug_key !== 'jw_debug_123') return res.status(401).send("No");
-    try {
-        const [subs] = await pool.execute("SELECT * FROM push_subscriptions ORDER BY created_at DESC LIMIT 1");
-        if (subs.length === 0) return res.send("No subs");
-        const sub = { endpoint: subs[0].endpoint, keys: { p256dh: subs[0].p256dh, auth: subs[0].auth } };
-        await webPush.sendNotification(sub, JSON.stringify({ title: "Node.js Push", body: "Funciona!" }));
-        res.json({ status: "Sent", endpoint: sub.endpoint });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
 
 // Função de Log para Depuração no Banco de Dados (v2.0.4)
 const ntfyLog = async (msg, level = 'info') => {
@@ -223,38 +189,31 @@ const sendNtfyNative = (channel, title, body) => {
     });
 };
 
-// --- PUSH WORKER ---
+// --- PUSH WORKER (NTFY-Only v2.1.0) ---
 const pushWorker = async () => {
     if (!pool) return;
     try {
         const [toSend] = await pool.execute(
-            "SELECT n.*, s.endpoint, s.p256dh, s.auth FROM scheduled_notifications n LEFT JOIN push_subscriptions s ON n.user_id = s.user_id WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
+            "SELECT * FROM scheduled_notifications WHERE sent = 0 AND scheduled_time <= UTC_TIMESTAMP() LIMIT 20"
         );
 
         if (toSend.length > 0) {
-            ntfyLog(`Processando ${toSend.length} notificações...`);
+            ntfyLog(`[WORKER] Processando ${toSend.length} notificações...`);
         }
 
         for (const item of toSend) {
             const ntfyChannel = `jw_assistant_${item.user_id}`;
             try {
                 await sendNtfyNative(ntfyChannel, item.title, item.body);
-                ntfyLog(`Sucesso: ${ntfyChannel} (${item.title})`);
+                ntfyLog(`Sucesso NTFY: ${ntfyChannel} (${item.title})`);
             } catch (ntfyErr) {
-                ntfyLog(`FALHA: ${ntfyChannel} - ${ntfyErr.message}`);
-                console.error("[NTFY] Falha v2.0.2:", ntfyErr.message);
-            }
-
-            if (item.endpoint) {
-                const sub = { endpoint: item.endpoint, keys: { p256dh: item.p256dh, auth: item.auth } };
-                webPush.sendNotification(sub, "").catch(() => { });
+                ntfyLog(`FALHA NTFY: ${ntfyChannel} - ${ntfyErr.message}`, 'error');
             }
 
             await pool.execute("UPDATE scheduled_notifications SET sent = 1 WHERE id = ?", [item.id]);
         }
     } catch (e) {
-        ntfyLog(`ERRO WORKER: ${e.message}`);
-        console.error("[WORKER ERRO]", e.message);
+        ntfyLog(`ERRO WORKER: ${e.message}`, 'error');
     }
 };
 setInterval(pushWorker, 60000);
@@ -263,7 +222,8 @@ setInterval(pushWorker, 60000);
 app.get('/api/ping', (req, res) => {
     res.json({
         status: 'alive',
-        version: 'v2.0.6',
+        version: 'v2.1.0',
+        engine: 'NTFY-Only',
         node: process.version,
         time_utc: new Date().toISOString()
     });
@@ -302,7 +262,7 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    await ntfyLog(`[BOOT] Servidor v2.0.9 iniciado com sucesso na porta ${PORT}`);
-    app.listen(PORT, () => console.log(`[SERVER] v2.0.9 (NTFY Resiliente) na porta ${PORT}`));
+    await ntfyLog(`[BOOT] Servidor v2.1.0 (NTFY-Only) iniciado na porta ${PORT}`);
+    app.listen(PORT, () => console.log(`[SERVER] v2.1.0 na porta ${PORT}`));
 };
 start();

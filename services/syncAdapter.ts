@@ -110,81 +110,9 @@ export const syncAdapter = {
         }
     },
 
-    /**
-     * Inicializa a sincronização
-     */
     initializeUser: async () => {
         if (syncAdapter.isAvailable()) {
             await syncAdapter.pullUserData();
         }
-    },
-
-    /**
-     * Inscreve o usuário no sistema de Web Push Real
-     */
-    subscribeUser: async (publicKey: string) => {
-        const token = localStorage.getItem('jw_auth_token');
-        if (!token || !('serviceWorker' in navigator)) {
-            console.warn('[PUSH] Requisitos não atendidos (Token ou SW)');
-            return false;
-        }
-
-        try {
-            const registration = await navigator.serviceWorker.ready;
-
-            // Conversão necessária para iOS/Safari e navegadores rígidos
-            const convertedKey = urlBase64ToUint8Array(publicKey);
-
-            let subscription = await registration.pushManager.getSubscription();
-
-            if (subscription) {
-                // Tenta renovar se a chave for diferente ou apenas para garantir
-                await subscription.unsubscribe();
-            }
-
-            subscription = await registration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: convertedKey
-            });
-
-            console.log('[PUSH] Nova subscrição gerada:', subscription.endpoint);
-
-            const response = await fetch('/api/push_sub.php', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(subscription)
-            });
-
-            const result = await response.json();
-            console.log('[PUSH] Resposta do servidor:', result);
-
-            return response.ok;
-        } catch (error) {
-            console.error('[PUSH] Erro crítico na subscrição:', error);
-            // Alerta detalhado para o usuário ajudar no debug
-            if (error instanceof Error) {
-                alert("Erro de Registro: " + error.message);
-            }
-            return false;
-        }
     }
 };
-
-// Função auxiliar para converter a chave VAPID
-function urlBase64ToUint8Array(base64String: string) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding)
-        .replace(/\-/g, '+')
-        .replace(/_/g, '/');
-
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-}
