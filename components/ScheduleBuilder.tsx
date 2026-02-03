@@ -330,6 +330,8 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
         const success = await syncAdapter.subscribeUser(publicKey);
         if (success) {
           console.log("[PUSH] Aparelho registrado com sucesso no servidor.");
+        } else {
+          alert("Aviso: Não foi possível registrar as notificações em segundo plano neste aparelho. Tente desativar o modo de economia de energia.");
         }
       } catch (e) {
         console.warn("[PUSH] Erro ao registrar assinatura no servidor:", e);
