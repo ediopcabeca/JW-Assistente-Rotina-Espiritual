@@ -239,6 +239,6 @@ app.get("*", (req, res) => {
 const start = async () => {
     pool = await initConnection();
     aiSetup();
-    app.listen(PORT, () => console.log(`[SERVER] v1.9.0 (NTFY Ativado) na porta ${PORT}`));
+    app.listen(PORT, () => console.log(`[SERVER] v1.9.2 (NTFY Ativado) na porta ${PORT}`));
 };
 start();
