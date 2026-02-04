@@ -53,7 +53,30 @@ function isChapterInRange($requested, $stored)
     $bookReqNorm = normalizeString($bookReqOrig);
     $numReq = (int) $m[2];
 
-    // Verifica se o livro (normalizado) está na string armazenada (normalizada)
+    // NOVO: Suporte a Range Entre Livros (ex: "Gênesis 49 - Êxodo 2")
+    // Regex captura: (Livro1) (Cap1) - (Livro2) (Cap2)
+    if (preg_match('/^(.+?)\s+(\d+)\s*-\s*(.+?)\s+(\d+)$/u', $normStored, $crossMatch)) {
+        $book1 = trim($crossMatch[1]);
+        $cap1 = (int) $crossMatch[2];
+        $book2 = trim($crossMatch[3]);
+        $cap2 = (int) $crossMatch[4];
+
+        // Verifica se é o Livro 1
+        if (strpos($book1, $bookReqNorm) !== false) {
+            // Aceita se for maior ou igual ao cap de início (ex: Gen 50 >= Gen 49)
+            if ($numReq >= $cap1)
+                return true;
+        }
+
+        // Verifica se é o Livro 2
+        if (strpos($book2, $bookReqNorm) !== false) {
+            // Aceita se for menor ou igual ao cap de fim (ex: Ex 1 <= Ex 2)
+            if ($numReq <= $cap2)
+                return true;
+        }
+    }
+
+    // fallback para lógica antiga (Livro Único)
     if (stripos($normStored, $bookReqNorm) === false)
         return false;
 
@@ -61,13 +84,18 @@ function isChapterInRange($requested, $stored)
     // Usamos a versão normalizada para achar a posição e extrair a parte numérica de forma segura
     // Simplificação: vamos pegar tudo que sobrou após o nome do livro e tratar os números
     $numbersPart = preg_replace('/' . preg_quote($bookReqNorm, '/') . '/i', '', $normStored);
+    // Remove também qualquer parte de outro livro se tiver sobrado (caso falhe regex acima)
+    $numbersPart = preg_replace('/[a-z\x{00C0}-\x{00FF}]+/u', '', $numbersPart);
 
     $parts = preg_split('/[;,]/', $numbersPart);
     foreach ($parts as $part) {
         $part = trim($part);
         if (empty($part))
             continue;
-        if (preg_match('/^(\d+)\s*-\s*(\d+)$/', $part, $range)) {
+        // Limpa caracteres estranhos que possam ter sobrado
+        $part = preg_replace('/[^\d-]/', '', $part);
+
+        if (preg_match('/^(\d+)-(\d+)$/', $part, $range)) {
             if ($numReq >= (int) $range[1] && $numReq <= (int) $range[2])
                 return true;
         } elseif (preg_match('/^(\d+)$/', $part, $single)) {
