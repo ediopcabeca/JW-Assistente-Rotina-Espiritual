@@ -69,9 +69,9 @@ const TranscriptionHelper: React.FC = () => {
 3. Que pontos específicos posso usar para melhorar minha participação no ministério de campo?
 4. Como este ensino fortalece minha confiança nas promessas do Reino?`;
 
-  const AUDIO_GUIDELINE = `Atuem como instrutores bíblicos. O tom deve ser encorajador e na 1ª pessoa do plural. É OBRIGATÓRIO citar as referências bíblicas (livro, capítulo e versículo) sempre que explicarem um ponto principal. Não usem tom jornalístico. O objetivo é que o ouvinte saiba exatamente qual texto bíblico apoia cada lição ensinada.`;
+  const AUDIO_GUIDELINE = `Atuem como instrutores bíblicos. O tom deve ser encorajador e na 1ª pessoa do plural. FONTE: Usem exclusivamente a 'Tradução do Novo Mundo da Bíblia Sagrada'. É OBRIGATÓRIO citar as referências bíblicas (livro, capítulo e versículo) sempre que explicarem um ponto principal. Não usem tom jornalístico.`;
 
-  const VIDEO_GUIDELINE = `Ajam como tutores que guiam o estudante pelas pérolas espirituais. Foquem em fixação visual. Cada tópico apresentado deve vir acompanhado da sua respectiva referência bíblica de forma clara. Tratem a Bíblia como a autoridade máxima e evitem linguagem de dúvida como "a fonte afirma".`;
+  const VIDEO_GUIDELINE = `Ajam como tutores que guiam o estudante pelas pérolas espirituais. FONTE: 'Tradução do Novo Mundo'. REGRAS DE IMAGEM (CRÍTICO): 1. NÃO usem Cruz (Jesus morreu em uma estaca). 2. NÃO representem Jesus com cabelos longos (ele tinha aparência judaica comum, cabelo curto). 3. Evitem imagens místicas/religiosas da cristandade. O foco é a exatidão bíblica.`;
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
