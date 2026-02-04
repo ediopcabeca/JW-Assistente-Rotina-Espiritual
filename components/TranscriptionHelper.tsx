@@ -207,9 +207,11 @@ const TranscriptionHelper: React.FC = () => {
 
               try {
                 const base64Chunk = await blobToBase64(chunkBlob);
-                // Retry logic
+                // Retry logic with safe mime type
+                const safeMimeType = blob.type || 'audio/mp3';
+
                 const partialText = await retryOperation(() =>
-                  analyzeDiscourse(base64Chunk, true, blob.type, true),
+                  analyzeDiscourse(base64Chunk, true, safeMimeType, true),
                   MAX_RETRIES
                 );
                 accumulatedText += "\\n" + partialText;
@@ -230,7 +232,8 @@ const TranscriptionHelper: React.FC = () => {
           } else {
             // Normal Strategy
             const base64 = await blobToBase64(blob);
-            response = await retryOperation(() => analyzeDiscourse(base64, true, blob.type), 2);
+            const safeMimeType = blob.type || 'audio/mp3';
+            response = await retryOperation(() => analyzeDiscourse(base64, true, safeMimeType), 2);
           }
 
         } else if (newSessions[i].type === 'text' && newSessions[i].textInput) {

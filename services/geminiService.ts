@@ -447,9 +447,10 @@ export const analyzeDiscourse = async (
     });
 
     return text || "Não foi possível processar o discurso.";
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error analyzing discourse:", error);
-    return "Erro ao processar o conteúdo. Verifique se o áudio não é muito longo ou tente novamente.";
+    // Retorna o erro real para debug do usuário
+    return `Erro técnico: ${error.message || JSON.stringify(error)}. Tente com um arquivo menor ou converter para MP3.`;
   }
 };
 
