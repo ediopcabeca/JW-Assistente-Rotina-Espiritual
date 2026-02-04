@@ -192,13 +192,15 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
       try {
         const token = localStorage.getItem('jw_auth_token');
         const isoString = targetDate.toISOString(); // Define isoString here
-        const response = await fetch('/notif/schedule', {
+        // v2.3.0: Use PHP Endpoint instead of Node
+        const response = await fetch('/api/push_schedule.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // PHP requires Bearer Token
           },
           body: JSON.stringify({
-            user_id: userId,
+            // user_id is extracted from token in PHP
             index,
             title: `Lembrete JW: ${item.activity}`,
             body: item.focus || item.activity,
@@ -206,7 +208,9 @@ const ScheduleBuilder: React.FC<ScheduleBuilderProps> = ({ userId }) => {
           })
         });
         if (!response.ok) {
-          console.error("[NTFY] Falha ao registrar agendamento no servidor:", response.statusText);
+          console.error("[NTFY] Falha ao registrar agendamento (PHP):", response.statusText);
+        } else {
+          console.log("[NTFY] Agendamento salvo via PHP v2.3.0");
         }
       } catch (e) {
         console.warn("[NTFY] Falha ao registrar agendamento no servidor:", e);
