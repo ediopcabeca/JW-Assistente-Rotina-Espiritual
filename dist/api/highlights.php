@@ -13,6 +13,13 @@ if (!$userData) {
     exit;
 }
 
+// DEBUG LOGGER
+function logDebug($msg)
+{
+    file_put_contents(__DIR__ . '/highlights_debug.log', date('Y-m-d H:i:s') . " - " . $msg . "\n", FILE_APPEND);
+}
+logDebug("Request: " . $_SERVER['REQUEST_URI'] . " Method: " . $method);
+
 $userId = $userData['id'];
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -75,21 +82,42 @@ switch ($method) {
     case 'GET':
         $chapters = $_GET['chapters'] ?? null;
         if ($chapters) {
+            logDebug("Searching for: $chapters");
+            // Match Exato
             $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? AND chapters = ? ORDER BY created_at DESC LIMIT 1");
             $stmt->execute([$userId, $chapters]);
             $highlight = $stmt->fetch();
-            if (!$highlight) {
-                $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? ORDER BY created_at DESC");
+
+            if ($highlight) {
+                logDebug("Found EXACT match: " . $highlight['chapters']);
+            } else {
+                logDebug("No exact match. Trying Range Search (Optimized)...");
+                // CRITICAL FIX: Select ONLY metadata to avoid OOM (Out of Memory) due to Base64 audio
+                $stmt = $pdo->prepare("SELECT id, chapters FROM bible_highlights WHERE user_id = ? ORDER BY created_at DESC");
                 $stmt->execute([$userId]);
                 $rows = $stmt->fetchAll();
+                logDebug("Total metadata rows to scan: " . count($rows));
+
+                $foundId = null;
                 foreach ($rows as $row) {
                     if (isChapterInRange($chapters, $row['chapters'])) {
-                        $highlight = $row;
+                        $foundId = $row['id'];
+                        logDebug("Found RANGE match ID: " . $foundId . " for " . $row['chapters']);
                         break;
                     }
                 }
+
+                if ($foundId) {
+                    // Now fetch the full heavy content only for the winner
+                    $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE id = ?");
+                    $stmt->execute([$foundId]);
+                    $highlight = $stmt->fetch();
+                } else {
+                    logDebug("No match found after scan.");
+                }
             }
         } else {
+            // ... (rest of code)
             $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 1");
             $stmt->execute([$userId]);
             $highlight = $stmt->fetch();
