@@ -13,6 +13,13 @@ if (!$userData) {
     exit;
 }
 
+// DEBUG LOGGER
+function logDebug($msg)
+{
+    file_put_contents(__DIR__ . '/highlights_debug.log', date('Y-m-d H:i:s') . " - " . $msg . "\n", FILE_APPEND);
+}
+logDebug("Request: " . $_SERVER['REQUEST_URI'] . " Method: " . $method);
+
 $userId = $userData['id'];
 $method = $_SERVER['REQUEST_METHOD'];
 
@@ -75,21 +82,33 @@ switch ($method) {
     case 'GET':
         $chapters = $_GET['chapters'] ?? null;
         if ($chapters) {
+            logDebug("Searching for: $chapters");
+            // Match Exato
             $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? AND chapters = ? ORDER BY created_at DESC LIMIT 1");
             $stmt->execute([$userId, $chapters]);
             $highlight = $stmt->fetch();
-            if (!$highlight) {
+
+            if ($highlight) {
+                logDebug("Found EXACT match: " . $highlight['chapters']);
+            } else {
+                logDebug("No exact match. Trying Range Search...");
                 $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? ORDER BY created_at DESC");
                 $stmt->execute([$userId]);
                 $rows = $stmt->fetchAll();
+                logDebug("Total rows to scan: " . count($rows));
+
                 foreach ($rows as $row) {
                     if (isChapterInRange($chapters, $row['chapters'])) {
                         $highlight = $row;
+                        logDebug("Found RANGE match: " . $row['chapters']);
                         break;
                     }
                 }
+                if (!$highlight)
+                    logDebug("No match found after scan.");
             }
         } else {
+            // ... (rest of code)
             $stmt = $pdo->prepare("SELECT * FROM bible_highlights WHERE user_id = ? AND is_read = 0 ORDER BY created_at DESC LIMIT 1");
             $stmt->execute([$userId]);
             $highlight = $stmt->fetch();
