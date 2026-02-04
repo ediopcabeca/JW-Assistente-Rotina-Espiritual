@@ -186,11 +186,16 @@ const TranscriptionHelper: React.FC = () => {
   };
 
   // Chunking Constants
-  // PREVENÇÃO DE CORRUPÇÃO: Aumentado para 99MB. Slice direto corrompe headers de MP4/M4A.
-  // Futuramente implementar ffmpeg.wasm se necessário.
-  const CHUNK_SIZE_MB = 100;
+  const CHUNK_SIZE_MB = 4;
   const CHUNK_SIZE_BYTES = CHUNK_SIZE_MB * 1024 * 1024;
   const MAX_RETRIES = 3;
+
+  const isSafeToChunk = (fileName: string): boolean => {
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    // MP3, WAV e AAC (ADTS) geralmente suportam concatenação de streams/chunks.
+    // MP4 e M4A são containers rígidos (moov atom) que quebram se fatiados.
+    return ['mp3', 'wav', 'aac', 'ogg', 'oga'].includes(ext || '');
+  };
 
   const processQueue = async () => {
     setLoading(true);
@@ -207,9 +212,11 @@ const TranscriptionHelper: React.FC = () => {
 
         if (newSessions[i].type === 'audio' && newSessions[i].blob) {
           const blob = newSessions[i].blob!;
+          const fileName = newSessions[i].fileName;
+          const canChunk = isSafeToChunk(fileName);
 
-          if (blob.size > CHUNK_SIZE_BYTES) {
-            // LONG AUDIO STRATEGY
+          if (blob.size > CHUNK_SIZE_BYTES && canChunk) {
+            // LONG AUDIO STRATEGY (SAFE FORMATS ONLY)
             const totalChunks = Math.ceil(blob.size / CHUNK_SIZE_BYTES);
             let accumulatedText = "";
             let hasErrors = false;
@@ -224,8 +231,7 @@ const TranscriptionHelper: React.FC = () => {
 
               try {
                 const base64Chunk = await blobToBase64(chunkBlob);
-                // Retry logic with correct mime type
-                const correctMimeType = getMimeTypeFromInfo(blob, newSessions[i].fileName);
+                const correctMimeType = getMimeTypeFromInfo(blob, fileName);
 
                 const partialText = await retryOperation(() =>
                   analyzeDiscourse(base64Chunk, true, correctMimeType, true),
@@ -247,9 +253,14 @@ const TranscriptionHelper: React.FC = () => {
             response = await retryOperation(() => analyzeDiscourse(accumulatedText, false), 2);
 
           } else {
-            // Normal Strategy
+            // WHOLE FILE STRATEGY (MP4/M4A or Small Files)
+            if (blob.size > CHUNK_SIZE_BYTES && !canChunk) {
+              newSessions[i].result = "Arquivo grande detectado. Enviando inteiro (MP4 não permite cortes)...";
+              setSessions([...newSessions]);
+            }
+
             const base64 = await blobToBase64(blob);
-            const correctMimeType = getMimeTypeFromInfo(blob, newSessions[i].fileName);
+            const correctMimeType = getMimeTypeFromInfo(blob, fileName);
             response = await retryOperation(() => analyzeDiscourse(base64, true, correctMimeType), 2);
           }
 
@@ -259,10 +270,18 @@ const TranscriptionHelper: React.FC = () => {
 
         newSessions[i].result = response;
         newSessions[i].status = 'success';
-      } catch (error) {
+      } catch (error: any) {
         console.error(error);
         newSessions[i].status = 'error';
-        newSessions[i].result = "Erro crítico ao processar. Verifique sua conexão e tente novamente.";
+        // Mensagem de erro inteligente baseada no contexto
+        const isTimeout = error.message?.includes('504') || error.message?.includes('timeout');
+        const isMp4 = newSessions[i].fileName.toLowerCase().includes('mp4') || newSessions[i].fileName.toLowerCase().includes('m4a');
+
+        if (isTimeout && isMp4) {
+          newSessions[i].result = "⚠️ Erro 504 (Timeout): O arquivo MP4 é muito grande para enviar de uma vez e não pode ser cortado automaticamente. SOLUÇÃO: Converta para MP3 antes de enviar.";
+        } else {
+          newSessions[i].result = `Erro: ${error.message || "Falha no processamento. Tente novamente."}`;
+        }
       }
       setSessions([...newSessions]);
     }
