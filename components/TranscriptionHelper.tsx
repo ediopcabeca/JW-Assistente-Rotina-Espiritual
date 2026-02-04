@@ -171,7 +171,9 @@ const TranscriptionHelper: React.FC = () => {
   };
 
   // Chunking Constants
-  const CHUNK_SIZE_MB = 4;
+  // PREVENÇÃO DE CORRUPÇÃO: Aumentado para 99MB. Slice direto corrompe headers de MP4/M4A.
+  // Futuramente implementar ffmpeg.wasm se necessário.
+  const CHUNK_SIZE_MB = 100;
   const CHUNK_SIZE_BYTES = CHUNK_SIZE_MB * 1024 * 1024;
   const MAX_RETRIES = 3;
 
