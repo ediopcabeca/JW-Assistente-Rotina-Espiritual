@@ -358,18 +358,26 @@ const TranscriptionHelper: React.FC = () => {
                 <button
                   onClick={processQueue}
                   disabled={loading || sessions.length === 0}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                  className={`
+                        w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all duration-300 shadow-xl
+                        ${loading || sessions.length === 0
+                      ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed border-2 border-dashed border-gray-200 dark:border-gray-700'
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white transform hover:scale-[1.02] active:scale-[0.98] shadow-emerald-500/30 ring-4 ring-emerald-500/10'
+                    }
+                      `}
                 >
-                  {loading ? <Loader2 className="animate-spin" /> : <Sparkles />}
-                  {loading ? 'Processando Fila...' : 'Gerar Resumos (Processar Lote)'}
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} className={sessions.length > 0 ? "animate-pulse" : ""} />}
+                  <span className="text-sm sm:text-base uppercase tracking-wide">
+                    {loading ? 'Processando Fila...' : sessions.length === 0 ? 'Adicione itens para Gerar' : 'Gerar Resumos (Processar Lote)'}
+                  </span>
                 </button>
 
                 {sessions.some(s => s.status === 'success') && (
                   <button
                     onClick={() => navigator.clipboard.writeText(getConsolidatedMarkdown())}
-                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                    className="w-full py-3 bg-white dark:bg-gray-800 border-2 border-indigo-100 dark:border-indigo-900/50 hover:border-indigo-500 dark:hover:border-indigo-500 text-indigo-700 dark:text-indigo-300 rounded-xl font-bold flex items-center justify-center gap-2 transition-all hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                   >
-                    <Copy size={18} /> Copiar Tudo (Markdown Unificado)
+                    <Copy size={18} /> Copiar Markdown Unificado
                   </button>
                 )}
               </div>
