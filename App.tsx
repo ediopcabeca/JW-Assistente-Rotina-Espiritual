@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AppView } from './types';
+import {
+  User, Menu, X, Download, ShieldCheck, FileText, Settings, Bell,
+  LayoutDashboard, CalendarDays, Briefcase, Book, Sun, Moon, LogOut,
+  PanelLeftClose, PanelLeft, Palette, BookOpen, Search, Database
+} from 'lucide-react';
 import ScheduleBuilder from './components/ScheduleBuilder';
 import MinistryHelper from './components/MinistryHelper';
 import BibleReading from './components/BibleReading';
@@ -10,25 +15,58 @@ import LoginScreen from './components/LoginScreen';
 import AdminPanel from './components/AdminPanel';
 import { syncAdapter } from './services/syncAdapter';
 import { getReadingForToday } from './services/bibleData';
-import {
-  LayoutDashboard,
-  CalendarDays,
-  Briefcase,
-  Book,
-  Menu,
-  X,
-  FileText,
-  Sun,
-  Moon,
-  LogOut,
-  User,
-  PanelLeftClose,
-  PanelLeft,
-  Palette,
-  BookOpen,
-  Search,
-  Database
-} from 'lucide-react';
+// (Imports cleaned)
+
+// --- v2.2.0 CLIENT-WORKER LOGIC ---
+const useNotificationPoller = (userId: string | null) => {
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkNotifications = async () => {
+      const token = localStorage.getItem('jw_auth_token');
+      if (!token) return;
+
+      try {
+        const response = await fetch('/api/push_fetch.php', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.status === 'success' && data.title) {
+            console.log("[ClientWorker] Notificação Recebida:", data);
+
+            // Disparo direto NTFY (Lógica v2.1.4 Safe)
+            const safeTopic = `jw_assistant_${userId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+
+            // Remove emojis do título para header safe
+            const safeTitle = data.title.replace(/[^\x00-\x7F]/g, "");
+
+            await fetch(`https://ntfy.sh/${safeTopic}`, {
+              method: 'POST',
+              body: data.body,
+              headers: {
+                'Title': safeTitle || 'Lembrete JW',
+                'Priority': 'high',
+                'Tags': 'bell'
+              }
+            });
+            console.log("[ClientWorker] Disparado para NTFY:", safeTopic);
+          }
+        }
+      } catch (e) {
+        console.error("[ClientWorker] Erro no polling:", e);
+      }
+    };
+
+    // Check immediately and then every 60s
+    checkNotifications();
+    const interval = setInterval(checkNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [userId]);
+};
+// ----------------------------------
+// (Imports removed - consolidated at top)
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<string | null>(() => {
@@ -37,6 +75,9 @@ const App: React.FC = () => {
     }
     return null;
   });
+
+  // Ativa o Poller de Notificações (Busca ativa pois Worker Server-Side está instável)
+  useNotificationPoller(currentUser);
 
   const [currentView, setCurrentView] = useState<AppView>(AppView.DASHBOARD);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -317,7 +358,7 @@ const App: React.FC = () => {
                     <span className="w-7 h-7 bg-[#5a3696] rounded-lg flex-shrink-0 flex items-center justify-center text-white font-bold text-[10px]">JW</span>
                     <span className="truncate">Assistente</span>
                   </h1>
-                  <span className="text-[9px] text-gray-400 dark:text-gray-500 font-black flex-shrink-0 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">v2.1.4</span>
+                  <span className="text-[9px] text-gray-400 dark:text-gray-500 font-black flex-shrink-0 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700">v2.2.0</span>
                 </div>
                 <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 dark:bg-gray-900/40 rounded-md border border-gray-100 dark:border-gray-800 w-full overflow-hidden">
                   <User size={12} className="text-gray-400 flex-shrink-0" />
