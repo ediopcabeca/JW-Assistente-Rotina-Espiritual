@@ -25,6 +25,21 @@ async function retryOperation<T>(operation: () => Promise<T>, retries: number): 
   }
 }
 
+const getMimeTypeFromInfo = (blob: Blob, fileName: string): string => {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+
+  // Detecção por extensão (mais confiável para Gemini que o blob.type do browser)
+  if (ext === 'mp4') return 'audio/mp4';
+  if (ext === 'm4a') return 'audio/mp4';
+  if (ext === 'mp3') return 'audio/mp3';
+  if (ext === 'wav') return 'audio/wav';
+  if (ext === 'oga' || ext === 'ogg') return 'audio/ogg';
+  if (ext === 'aac') return 'audio/aac';
+
+  // Fallback para o tipo do blob ou mp3 se vazio
+  return blob.type || 'audio/mp3';
+};
+
 const TranscriptionHelper: React.FC = () => {
   // Batch State
   const [sessions, setSessions] = useState<RecordingSession[]>([]);
@@ -209,11 +224,11 @@ const TranscriptionHelper: React.FC = () => {
 
               try {
                 const base64Chunk = await blobToBase64(chunkBlob);
-                // Retry logic with safe mime type
-                const safeMimeType = blob.type || 'audio/mp3';
+                // Retry logic with correct mime type
+                const correctMimeType = getMimeTypeFromInfo(blob, newSessions[i].fileName);
 
                 const partialText = await retryOperation(() =>
-                  analyzeDiscourse(base64Chunk, true, safeMimeType, true),
+                  analyzeDiscourse(base64Chunk, true, correctMimeType, true),
                   MAX_RETRIES
                 );
                 accumulatedText += "\\n" + partialText;
@@ -234,8 +249,8 @@ const TranscriptionHelper: React.FC = () => {
           } else {
             // Normal Strategy
             const base64 = await blobToBase64(blob);
-            const safeMimeType = blob.type || 'audio/mp3';
-            response = await retryOperation(() => analyzeDiscourse(base64, true, safeMimeType), 2);
+            const correctMimeType = getMimeTypeFromInfo(blob, newSessions[i].fileName);
+            response = await retryOperation(() => analyzeDiscourse(base64, true, correctMimeType), 2);
           }
 
         } else if (newSessions[i].type === 'text' && newSessions[i].textInput) {
