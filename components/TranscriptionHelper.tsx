@@ -1,20 +1,40 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { analyzeDiscourse } from '../services/geminiService';
-import { FileText, Mic, StopCircle, Loader2, Copy, Sparkles, FileAudio, Upload, HelpCircle, Video, BookOpen, ClipboardCopy, Check } from 'lucide-react';
+import { FileText, Mic, StopCircle, Loader2, Copy, Sparkles, FileAudio, Upload, HelpCircle, Video, BookOpen, ClipboardCopy, Check, Plus, Trash2, List, Play, Pause, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+interface RecordingSession {
+  id: string;
+  blob: Blob | null;
+  fileName: string;
+  textInput?: string; // Para entradas de texto puro
+  result?: string;
+  status: 'idle' | 'processing' | 'success' | 'error';
+  type: 'audio' | 'text';
+}
+
 const TranscriptionHelper: React.FC = () => {
+  // Batch State
+  const [sessions, setSessions] = useState<RecordingSession[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState(true); // Default to batch capability
+
+  // Current Input State
   const [inputText, setInputText] = useState('');
-  const [result, setResult] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [currentBlob, setCurrentBlob] = useState<Blob | null>(null);
+  const [currentFileName, setCurrentFileName] = useState<string | null>(null);
+
+  // Recording State
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+
+  // UI State
+  const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<any>(null);
 
   // Guidelines Constants
   const MEDITATION_QUESTIONS = `Perguntas para Meditação e Estudo:
@@ -33,40 +53,54 @@ const TranscriptionHelper: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  // Timer Logic
+  useEffect(() => {
+    if (isRecording) {
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+      setRecordingTime(0);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [isRecording]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Prefer standard codecs supported by browsers
       let options = { mimeType: 'audio/webm' };
       if (!MediaRecorder.isTypeSupported('audio/webm')) {
-         if (MediaRecorder.isTypeSupported('audio/mp4')) {
-             options = { mimeType: 'audio/mp4' };
-         } else {
-             // Fallback to default
-             options = {} as any;
-         }
+        if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          options = { mimeType: 'audio/mp4' };
+        } else {
+          options = {} as any;
+        }
       }
-      
+
       const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
       chunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
+        if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: mediaRecorder.mimeType || 'audio/webm' });
-        setAudioBlob(blob);
-        setFileName('Gravação de Voz');
-        setInputText(''); // Clear text input if audio is present
+        setCurrentBlob(blob);
+        setCurrentFileName(`Gravação ${new Date().toLocaleTimeString()}`);
+        setInputText('');
       };
 
       mediaRecorder.start();
       setIsRecording(true);
-      setResult('');
     } catch (err) {
       console.error("Error accessing microphone:", err);
       alert("Não foi possível acessar o microfone.");
@@ -82,21 +116,36 @@ const TranscriptionHelper: React.FC = () => {
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAudioBlob(file);
-      setFileName(file.name);
-      setInputText(''); // Clear text input
-      setResult('');
+    if (e.target.files) {
+      // Suporte a múltiplos arquivos no upload
+      Array.from(e.target.files).forEach(file => {
+        addToQueue(file, file.name, 'audio');
+      });
     }
   };
 
-  const handleClearAudio = () => {
-    setAudioBlob(null);
-    setFileName(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+  const handleClearCurrent = () => {
+    setCurrentBlob(null);
+    setCurrentFileName(null);
+    setInputText('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const addToQueue = (blobOrNull: Blob | null, name: string, type: 'audio' | 'text', textVal?: string) => {
+    const newSession: RecordingSession = {
+      id: Math.random().toString(36).substr(2, 9),
+      blob: blobOrNull,
+      fileName: name,
+      textInput: textVal,
+      status: 'idle',
+      type
+    };
+    setSessions(prev => [...prev, newSession]);
+    handleClearCurrent(); // Limpa área de input
+  };
+
+  const removeFromQueue = (id: string) => {
+    setSessions(prev => prev.filter(s => s.id !== id));
   };
 
   const blobToBase64 = (blob: Blob): Promise<string> => {
@@ -104,7 +153,6 @@ const TranscriptionHelper: React.FC = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        // Remove data url prefix (e.g. "data:audio/webm;base64,")
         const base64Data = base64String.split(',')[1];
         resolve(base64Data);
       };
@@ -113,228 +161,216 @@ const TranscriptionHelper: React.FC = () => {
     });
   };
 
-  const handleProcess = async () => {
-    if (!inputText && !audioBlob) return;
+  const processQueue = async () => {
     setLoading(true);
-    setResult('');
+    const newSessions = [...sessions];
 
-    try {
-      let response = '';
-      if (audioBlob) {
-        const base64 = await blobToBase64(audioBlob);
-        response = await analyzeDiscourse(base64, true, audioBlob.type);
-      } else {
-        response = await analyzeDiscourse(inputText, false);
+    for (let i = 0; i < newSessions.length; i++) {
+      if (newSessions[i].status === 'success') continue; // Pula os já feitos
+
+      newSessions[i].status = 'processing';
+      setSessions([...newSessions]); // Atualiza UI
+
+      try {
+        let response = '';
+        if (newSessions[i].type === 'audio' && newSessions[i].blob) {
+          const base64 = await blobToBase64(newSessions[i].blob!);
+          response = await analyzeDiscourse(base64, true, newSessions[i].blob!.type);
+        } else if (newSessions[i].type === 'text' && newSessions[i].textInput) {
+          response = await analyzeDiscourse(newSessions[i].textInput!, false);
+        }
+
+        newSessions[i].result = response;
+        newSessions[i].status = 'success';
+      } catch (error) {
+        console.error(error);
+        newSessions[i].status = 'error';
+        newSessions[i].result = "Erro ao processar item.";
       }
-      setResult(response);
-    } catch (error) {
-      console.error(error);
-      setResult("Ocorreu um erro ao processar. Verifique se o arquivo não é muito grande.");
-    } finally {
-      setLoading(false);
+      setSessions([...newSessions]);
     }
+    setLoading(false);
+  };
+
+  const getConsolidatedMarkdown = () => {
+    return sessions
+      .filter(s => s.status === 'success' && s.result)
+      .map(s => `# Fonte: ${s.fileName}\n\n${s.result}`)
+      .join('\n\n---\n\n');
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
+    <div className="max-w-5xl mx-auto p-4 space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
         <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6 text-white">
           <div className="flex items-center space-x-3">
             <FileText size={28} className="opacity-90" />
             <div>
-              <h2 className="text-xl font-bold">Preparar para NotebookLM</h2>
-              <p className="text-emerald-100 text-sm">Transcreva e formate discursos para estudo profundo.</p>
+              <h2 className="text-xl font-bold">Preparar para NotebookLM (Modo Lote)</h2>
+              <p className="text-emerald-100 text-sm">Grave múltiplos discursos ou suba arquivos e gere um resumo unificado.</p>
             </div>
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
-          
-          {/* Config Panel for NotebookLM */}
+        <div className="p-6 space-y-8">
+
+          {/* Config Panel */}
           <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800 rounded-lg p-5">
             <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide mb-3 flex items-center gap-2">
               <Sparkles size={14} /> Painel de Configuração NotebookLM
             </h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
-              Copie estas diretrizes e cole no campo de "Instruções" (Audio Overview/System) do NotebookLM para garantir que a IA fale como um instrutor.
-            </p>
-            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <button
-                onClick={() => handleCopy(MEDITATION_QUESTIONS, 'meditation')}
-                className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-emerald-500 hover:shadow-sm transition-all group h-full"
-              >
-                <div className="mb-2 p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-emerald-600 dark:text-emerald-400">
-                   {copiedId === 'meditation' ? <Check size={20} /> : <HelpCircle size={20} />}
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Perguntas de Estudo</span>
-                <span className="text-xs text-gray-400 mt-1">Copiar lista</span>
+              <button onClick={() => handleCopy(MEDITATION_QUESTIONS, 'meditation')} className="guideline-btn p-3 bg-white dark:bg-gray-800 rounded-lg border hover:border-emerald-500 text-sm flex flex-col items-center text-center gap-2 transition-all">
+                <span className="font-bold text-gray-700 dark:text-gray-200">Perguntas de Estudo</span>
+                <span className="text-[10px] text-gray-400">{copiedId === 'meditation' ? 'Copiado!' : 'Copiar'}</span>
               </button>
-
-              <button
-                onClick={() => handleCopy(AUDIO_GUIDELINE, 'audio')}
-                className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-emerald-500 hover:shadow-sm transition-all group h-full"
-              >
-                <div className="mb-2 p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
-                   {copiedId === 'audio' ? <Check size={20} /> : <Mic size={20} />}
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Diretriz de Áudio</span>
-                <span className="text-xs text-gray-400 mt-1">Para o Podcast</span>
+              <button onClick={() => handleCopy(AUDIO_GUIDELINE, 'audio')} className="guideline-btn p-3 bg-white dark:bg-gray-800 rounded-lg border hover:border-emerald-500 text-sm flex flex-col items-center text-center gap-2 transition-all">
+                <span className="font-bold text-gray-700 dark:text-gray-200">Diretriz Áudio</span>
+                <span className="text-[10px] text-gray-400">{copiedId === 'audio' ? 'Copiado!' : 'Copiar'}</span>
               </button>
-
-              <button
-                onClick={() => handleCopy(VIDEO_GUIDELINE, 'video')}
-                className="flex flex-col items-center justify-center p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-emerald-500 hover:shadow-sm transition-all group h-full"
-              >
-                <div className="mb-2 p-2 bg-purple-100 dark:bg-purple-900/30 rounded-full text-purple-600 dark:text-purple-400">
-                   {copiedId === 'video' ? <Check size={20} /> : <Video size={20} />}
-                </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Diretriz de Vídeo</span>
-                <span className="text-xs text-gray-400 mt-1">Para Resumo Visual</span>
+              <button onClick={() => handleCopy(VIDEO_GUIDELINE, 'video')} className="guideline-btn p-3 bg-white dark:bg-gray-800 rounded-lg border hover:border-emerald-500 text-sm flex flex-col items-center text-center gap-2 transition-all">
+                <span className="font-bold text-gray-700 dark:text-gray-200">Diretriz Vídeo</span>
+                <span className="text-[10px] text-gray-400">{copiedId === 'video' ? 'Copiado!' : 'Copiar'}</span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Input Section */}
-            <div className="space-y-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                1. Entrada (Áudio ou Texto)
-              </label>
-              
-              <div className="flex flex-col gap-4">
-                 {/* Audio Section */}
-                <div className={`p-4 rounded-lg border-2 border-dashed transition-colors ${audioBlob ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-300'}`}>
-                    
-                    {!audioBlob ? (
-                      <div className="space-y-3">
-                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                <Mic size={16} /> Áudio (Gravar ou Enviar)
-                            </span>
-                            {isRecording && <span className="text-xs text-red-500 font-bold animate-pulse">GRAVANDO...</span>}
-                         </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Column: Input */}
+            <div className="space-y-6">
+              <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2"><Plus size={18} /> Adicionar Novo Item</h3>
 
-                         <div className="grid grid-cols-2 gap-3">
-                             {/* Record Button */}
-                             {!isRecording ? (
-                                <button 
-                                    onClick={startRecording}
-                                    className="py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg flex flex-col items-center justify-center gap-1 transition-colors font-medium text-xs sm:text-sm"
-                                >
-                                    <Mic size={20} />
-                                    <span>Gravar Agora</span>
-                                </button>
-                             ) : (
-                                <button 
-                                    onClick={stopRecording}
-                                    className="col-span-2 py-3 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 rounded-lg flex items-center justify-center gap-2 transition-colors font-medium border border-red-200 dark:border-red-800"
-                                >
-                                    <StopCircle size={20} /> Parar Gravação
-                                </button>
-                             )}
+              {/* Audio Recorder Area */}
+              <div className={`p-6 rounded-xl border-2 border-dashed transition-all ${isRecording ? 'border-red-400 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600'}`}>
+                {!currentBlob ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">Gravação de Áudio</span>
+                      {isRecording && <span className="text-red-500 font-mono font-bold animate-pulse">{formatTime(recordingTime)}</span>}
+                    </div>
 
-                             {/* Upload Button */}
-                             {!isRecording && (
-                               <button 
-                                  onClick={() => fileInputRef.current?.click()}
-                                  className="py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg flex flex-col items-center justify-center gap-1 transition-colors font-medium text-xs sm:text-sm"
-                               >
-                                  <Upload size={20} />
-                                  <span>Enviar Arquivo</span>
-                               </button>
-                             )}
-                         </div>
-                         <input 
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept="audio/*"
-                            onChange={handleFileUpload}
-                         />
+                    <div className="grid grid-cols-2 gap-4">
+                      {!isRecording ? (
+                        <button onClick={startRecording} className="py-4 bg-gray-100 dark:bg-gray-700 hover:bg-emerald-500 hover:text-white rounded-lg flex flex-col items-center gap-2 transition-all">
+                          <Mic size={24} /> <span className="text-xs font-bold">GRAVAR</span>
+                        </button>
+                      ) : (
+                        <button onClick={stopRecording} className="col-span-2 py-4 bg-red-500 hover:bg-red-600 text-white rounded-lg flex items-center justify-center gap-3 transition-all">
+                          <StopCircle size={24} /> <span className="font-bold">PARAR ({formatTime(recordingTime)})</span>
+                        </button>
+                      )}
+
+                      {!isRecording && (
+                        <button onClick={() => fileInputRef.current?.click()} className="py-4 bg-gray-100 dark:bg-gray-700 hover:bg-blue-500 hover:text-white rounded-lg flex flex-col items-center gap-2 transition-all">
+                          <Upload size={24} /> <span className="text-xs font-bold">UPLOAD ARQUIVO</span>
+                        </button>
+                      )}
+                    </div>
+                    <input type="file" ref={fileInputRef} className="hidden" accept="audio/*" multiple onChange={handleFileUpload} />
+                  </div>
+                ) : (
+                  // Preview of Recorded Clip waiting to be added
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-emerald-200">
+                      <FileAudio className="text-emerald-500" />
+                      <div className="flex-1 overflow-hidden">
+                        <input
+                          type="text"
+                          value={currentFileName || ''}
+                          onChange={(e) => setCurrentFileName(e.target.value)}
+                          className="w-full bg-transparent font-medium text-gray-800 dark:text-white outline-none"
+                        />
+                        <p className="text-xs text-gray-500">Pronto para adicionar à fila</p>
                       </div>
-                    ) : (
-                        <div className="flex items-center justify-between bg-white dark:bg-gray-800 p-3 rounded border border-emerald-200 dark:border-emerald-800">
-                            <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-400 overflow-hidden">
-                                <FileAudio size={24} className="flex-shrink-0" />
-                                <div className="flex flex-col overflow-hidden">
-                                  <span className="text-sm font-medium truncate">{fileName || 'Áudio'}</span>
-                                  <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70">Pronto para processar</span>
-                                </div>
-                            </div>
-                            <button onClick={handleClearAudio} className="text-xs text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 underline flex-shrink-0 ml-2">
-                                Remover
-                            </button>
-                        </div>
-                    )}
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
-                        Suporta gravações rápidas ou envio de MP3/M4A.
-                    </p>
-                </div>
-
-                <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
+                      <button onClick={handleClearCurrent} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full text-gray-500"><Trash2 size={16} /></button>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                        <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">OU</span>
-                    </div>
-                </div>
-
-                {/* Text Input */}
-                <textarea
-                    disabled={!!audioBlob}
-                    className={`w-full p-4 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none text-sm transition-all h-40 ${audioBlob ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 dark:text-gray-600 cursor-not-allowed' : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white'}`}
-                    placeholder="Cole aqui sua transcrição bruta ou anotações..."
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                />
+                    <button
+                      onClick={() => addToQueue(currentBlob, currentFileName || 'Sem nome', 'audio')}
+                      className="w-full py-2 bg-emerald-600 text-white rounded-lg font-bold shadow-lg hover:bg-emerald-700"
+                    >
+                      Adicionar à Fila de Lote
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <button
-                onClick={handleProcess}
-                disabled={loading || (!inputText && !audioBlob)}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 mt-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin" size={20} />
-                    <span>Processando e Formatando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={20} />
-                    <span>Gerar Formato NotebookLM</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Output Section */}
-            <div className="flex flex-col h-full min-h-[400px]">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex justify-between items-center">
-                <span>2. Resultado Formatado</span>
-                {result && (
-                  <button 
-                    onClick={() => navigator.clipboard.writeText(result)}
-                    className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 text-xs flex items-center gap-1 font-medium"
+              {/* Manual Text Input */}
+              <div className="space-y-2">
+                <textarea
+                  className="w-full p-4 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-900 bg-white h-32 focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
+                  placeholder="Ou cole um texto aqui..."
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                />
+                {inputText && (
+                  <button
+                    onClick={() => addToQueue(null, `Texto Manual ${sessions.length + 1}`, 'text', inputText)}
+                    className="w-full py-2 bg-gray-800 dark:bg-gray-700 text-white rounded-lg font-bold text-sm hover:bg-gray-900"
                   >
-                    <Copy size={14} /> Copiar Markdown
+                    Adicionar Texto à Fila
                   </button>
                 )}
-              </label>
-              
-              <div className="flex-1 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-700 p-6 overflow-y-auto max-h-[600px]">
-                {result ? (
-                  <div className="prose prose-emerald prose-sm dark:prose-invert max-w-none text-gray-900 dark:text-gray-200">
-                     <ReactMarkdown>{result}</ReactMarkdown>
+              </div>
+            </div>
+
+            {/* Right Column: Queue & Process */}
+            <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                  <List size={20} /> Fila de Lote ({sessions.length})
+                </h3>
+                {sessions.length > 0 && <button onClick={() => setSessions([])} className="text-xs text-red-500 hover:underline">Limpar Tudo</button>}
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 min-h-[300px] mb-4 pr-2 custom-scrollbar">
+                {sessions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <BookOpen size={48} className="mb-2 opacity-20" />
+                    <p className="text-sm">Nenhum item adicionado.</p>
                   </div>
                 ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
-                    <FileText size={48} className="mb-3 opacity-20" />
-                    <p className="text-sm">O resultado aparecerá aqui.</p>
-                    <p className="text-xs mt-1">Copie o texto final e cole em um arquivo .txt ou PDF para usar no NotebookLM.</p>
-                  </div>
+                  sessions.map((session, idx) => (
+                    <div key={session.id} className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm group">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500">{idx + 1}</span>
+                          {session.type === 'audio' ? <FileAudio size={16} className="text-blue-500 flex-shrink-0" /> : <FileText size={16} className="text-orange-500 flex-shrink-0" />}
+                          <span className="text-sm font-medium truncate max-w-[150px]">{session.fileName}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {session.status === 'processing' && <Loader2 size={14} className="animate-spin text-emerald-500" />}
+                          {session.status === 'success' && <Check size={14} className="text-green-500" />}
+                          {session.status === 'error' && <span className="text-red-500 text-xs">Erro</span>}
+                          <button onClick={() => removeFromQueue(session.id)} className="p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded"><Trash2 size={14} /></button>
+                        </div>
+                      </div>
+                      {session.result && (
+                        <div className="mt-2 pl-9">
+                          <p className="text-xs text-gray-500 line-clamp-2 italic border-l-2 border-emerald-200 pl-2">{session.result}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={processQueue}
+                  disabled={loading || sessions.length === 0}
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                >
+                  {loading ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                  {loading ? 'Processando Fila...' : 'Gerar Resumos (Processar Lote)'}
+                </button>
+
+                {sessions.some(s => s.status === 'success') && (
+                  <button
+                    onClick={() => navigator.clipboard.writeText(getConsolidatedMarkdown())}
+                    className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20"
+                  >
+                    <Copy size={18} /> Copiar Tudo (Markdown Unificado)
+                  </button>
                 )}
               </div>
             </div>
