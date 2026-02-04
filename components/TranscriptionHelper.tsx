@@ -1,22 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { analyzeDiscourse } from '../services/geminiService';
-import { FileText, Mic, StopCircle, Loader2, Copy, Sparkles, FileAudio, Upload, HelpCircle, Video, BookOpen, ClipboardCopy, Check, Plus, Trash2, List, Play, Pause, Download } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { FileText, Mic, StopCircle, Loader2, Copy, Sparkles, FileAudio, Upload, HelpCircle, Check, Plus, Trash2, List, BookOpen } from 'lucide-react';
 
 interface RecordingSession {
   id: string;
   blob: Blob | null;
   fileName: string;
-  textInput?: string; // Para entradas de texto puro
+  textInput?: string;
   result?: string;
   status: 'idle' | 'processing' | 'success' | 'error';
   type: 'audio' | 'text';
 }
 
+// Helper outside component or strictly typed function to avoid TSX confusion
+async function retryOperation<T>(operation: () => Promise<T>, retries: number): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return retryOperation(operation, retries - 1);
+    }
+    throw error;
+  }
+}
+
 const TranscriptionHelper: React.FC = () => {
   // Batch State
   const [sessions, setSessions] = useState<RecordingSession[]>([]);
-  const [isBatchMode, setIsBatchMode] = useState(true); // Default to batch capability
 
   // Current Input State
   const [inputText, setInputText] = useState('');
@@ -36,7 +47,7 @@ const TranscriptionHelper: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<any>(null);
 
-  // Guidelines Constants
+  // Guidelines
   const MEDITATION_QUESTIONS = `Perguntas para Meditação e Estudo:
 1. O que este discurso me ensinou sobre a personalidade e as qualidades de Jeová?
 2. Como posso aplicar os princípios bíblicos citados em minha vida familiar e pessoal?
@@ -53,7 +64,6 @@ const TranscriptionHelper: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Timer Logic
   useEffect(() => {
     if (isRecording) {
       timerRef.current = setInterval(() => {
@@ -117,7 +127,6 @@ const TranscriptionHelper: React.FC = () => {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      // Suporte a múltiplos arquivos no upload
       Array.from(e.target.files).forEach(file => {
         addToQueue(file, file.name, 'audio');
       });
@@ -141,7 +150,7 @@ const TranscriptionHelper: React.FC = () => {
       type
     };
     setSessions(prev => [...prev, newSession]);
-    handleClearCurrent(); // Limpa área de input
+    handleClearCurrent();
   };
 
   const removeFromQueue = (id: string) => {
@@ -161,99 +170,81 @@ const TranscriptionHelper: React.FC = () => {
     });
   };
 
-  // Chunking Constants & Helper
-  const CHUNK_SIZE_MB = 4; // Reduced to 4MB for better stability on shared hosting
+  // Chunking Constants
+  const CHUNK_SIZE_MB = 4;
   const CHUNK_SIZE_BYTES = CHUNK_SIZE_MB * 1024 * 1024;
   const MAX_RETRIES = 3;
 
-  const retryOperation = async<T>(operation: () => Promise<T>, retries: number): Promise<T> => {
-    try {
-      return await operation();
-    } catch (error) {
-      if (retries > 0) {
-      // Wait 1s before retry
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    return retryOperation(operation, retries - 1);
-      }
-    throw error;
-    }
-  };
-
   const processQueue = async () => {
-      setLoading(true);
+    setLoading(true);
     const newSessions = [...sessions];
 
     for (let i = 0; i < newSessions.length; i++) {
       if (newSessions[i].status === 'success') continue;
 
-    newSessions[i].status = 'processing';
-    setSessions([...newSessions]);
+      newSessions[i].status = 'processing';
+      setSessions([...newSessions]);
 
-    try {
-      let response = '';
+      try {
+        let response = '';
 
-    if (newSessions[i].type === 'audio' && newSessions[i].blob) {
+        if (newSessions[i].type === 'audio' && newSessions[i].blob) {
           const blob = newSessions[i].blob!;
-          
+
           if (blob.size > CHUNK_SIZE_BYTES) {
-             // LONG AUDIO STRATEGY: Chunking with Retries
-             const totalChunks = Math.ceil(blob.size / CHUNK_SIZE_BYTES);
-    let accumulatedText = "";
-    let hasErrors = false;
+            // LONG AUDIO STRATEGY
+            const totalChunks = Math.ceil(blob.size / CHUNK_SIZE_BYTES);
+            let accumulatedText = "";
+            let hasErrors = false;
 
-    for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
-      // Update UI with explicit progress
-      newSessions[i].result = `Processando Parte ${chunkIdx + 1} de ${totalChunks}...`;
-    setSessions([...newSessions]);
+            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+              newSessions[i].result = `Processando Parte ${chunkIdx + 1} de ${totalChunks}...`;
+              setSessions([...newSessions]);
 
-    const start = chunkIdx * CHUNK_SIZE_BYTES;
-    const end = Math.min(start + CHUNK_SIZE_BYTES, blob.size);
-    const chunkBlob = blob.slice(start, end, blob.type);
+              const start = chunkIdx * CHUNK_SIZE_BYTES;
+              const end = Math.min(start + CHUNK_SIZE_BYTES, blob.size);
+              const chunkBlob = blob.slice(start, end, blob.type);
 
-    try {
-                    const base64Chunk = await blobToBase64(chunkBlob);
+              try {
+                const base64Chunk = await blobToBase64(chunkBlob);
+                // Retry logic
+                const partialText = await retryOperation(() =>
+                  analyzeDiscourse(base64Chunk, true, blob.type, true),
+                  MAX_RETRIES
+                );
+                accumulatedText += "\\n" + partialText;
+              } catch (chunkError) {
+                console.error(`Error processing chunk ${chunkIdx + 1}:`, chunkError);
+                accumulatedText += `\\n[FALHA NA PARTE ${chunkIdx + 1} - A CONTINUAÇÃO PODE ESTAR INCOMPLETA]`;
+                hasErrors = true;
+              }
+            }
 
-                    // Retry logic for each chunk
-                    const partialText = await retryOperation(() =>
-    analyzeDiscourse(base64Chunk, true, blob.type, true),
-    MAX_RETRIES
-    );
+            newSessions[i].result = hasErrors
+              ? "Formatando texto (com algumas falhas de áudio)..."
+              : "Formatando texto final para NotebookLM...";
+            setSessions([...newSessions]);
 
-    accumulatedText += "\n" + partialText;
-                } catch (chunkError) {
-      console.error(`Error processing chunk ${chunkIdx + 1}:`, chunkError);
-    accumulatedText += `\n[FALHA NA PARTE ${chunkIdx + 1} - A CONTINUAÇÃO PODE ESTAR INCOMPLETA]`;
-    hasErrors = true;
-                }
-             }
-
-    // Final Pass
-    newSessions[i].result = hasErrors
-    ? "Formatando texto (com algumas falhas de áudio)..."
-    : "Formatando texto final para NotebookLM...";
-    setSessions([...newSessions]);
-
-             // Final formatting retry
-             response = await retryOperation(() => analyzeDiscourse(accumulatedText, false), 2);
+            response = await retryOperation(() => analyzeDiscourse(accumulatedText, false), 2);
 
           } else {
-             // Normal Strategy for short audio with retry
-             const base64 = await blobToBase64(blob);
-             response = await retryOperation(() => analyzeDiscourse(base64, true, blob.type), 2);
+            // Normal Strategy
+            const base64 = await blobToBase64(blob);
+            response = await retryOperation(() => analyzeDiscourse(base64, true, blob.type), 2);
           }
 
         } else if (newSessions[i].type === 'text' && newSessions[i].textInput) {
-      response = await retryOperation(() => analyzeDiscourse(newSessions[i].textInput!, false), 2);
+          response = await retryOperation(() => analyzeDiscourse(newSessions[i].textInput!, false), 2);
         }
 
-    newSessions[i].result = response;
-    newSessions[i].status = 'success';
+        newSessions[i].result = response;
+        newSessions[i].status = 'success';
       } catch (error) {
-      console.error(error);
-    newSessions[i].status = 'error';
-    newSessions[i].result = "Erro crítico ao processar. Verifique sua conexão e tente novamente.";
+        console.error(error);
+        newSessions[i].status = 'error';
+        newSessions[i].result = "Erro crítico ao processar. Verifique sua conexão e tente novamente.";
       }
-    setSessions([...newSessions]);
+      setSessions([...newSessions]);
     }
     setLoading(false);
   };
@@ -262,10 +253,10 @@ const TranscriptionHelper: React.FC = () => {
     return sessions
       .filter(s => s.status === 'success' && s.result)
       .map(s => `# Fonte: ${s.fileName}\n\n${s.result}`)
-    .join('\n\n---\n\n');
+      .join('\n\n---\n\n');
   };
 
-    return (
+  return (
     <div className="max-w-5xl mx-auto p-4 space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
         <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6 text-white">
@@ -280,7 +271,6 @@ const TranscriptionHelper: React.FC = () => {
 
         <div className="p-6 space-y-8">
 
-          {/* Config Panel */}
           <div className="bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-800 rounded-lg p-5">
             <h3 className="text-sm font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide mb-3 flex items-center gap-2">
               <Sparkles size={14} /> Painel de Configuração NotebookLM
@@ -302,14 +292,13 @@ const TranscriptionHelper: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Left Column: Input */}
             <div className="space-y-6">
               <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2"><Plus size={18} /> Adicionar Novo Item</h3>
 
-              {/* Audio Recorder Area */}
               <div className={`p-6 rounded-xl border-2 border-dashed transition-all ${isRecording ? 'border-red-400 bg-red-50 dark:bg-red-900/10' : 'border-gray-300 dark:border-gray-600'}`}>
                 {!currentBlob ? (
                   <div className="space-y-4">
+
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">Gravação de Áudio</span>
                       {isRecording && <span className="text-red-500 font-mono font-bold animate-pulse">{formatTime(recordingTime)}</span>}
@@ -342,7 +331,6 @@ const TranscriptionHelper: React.FC = () => {
                     <input type="file" ref={fileInputRef} className="hidden" accept="audio/*" multiple onChange={handleFileUpload} />
                   </div>
                 ) : (
-                  // Preview of Recorded Clip waiting to be added
                   <div className="space-y-4">
                     <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-emerald-200">
                       <FileAudio className="text-emerald-500" />
@@ -367,7 +355,6 @@ const TranscriptionHelper: React.FC = () => {
                 )}
               </div>
 
-              {/* Manual Text Input */}
               <div className="space-y-2">
                 <textarea
                   className="w-full p-4 rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-900 bg-white h-32 focus:ring-2 focus:ring-emerald-500 outline-none text-sm"
@@ -386,7 +373,6 @@ const TranscriptionHelper: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Queue & Process */}
             <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
@@ -397,7 +383,7 @@ const TranscriptionHelper: React.FC = () => {
 
               <div className="flex-1 overflow-y-auto space-y-3 min-h-[300px] mb-4 pr-2 custom-scrollbar">
                 {sessions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                  <div className="flex flex-col items-center justify-center h-full sm:min-h-[300px] text-gray-400">
                     <BookOpen size={48} className="mb-2 opacity-20" />
                     <p className="text-sm">Nenhum item adicionado.</p>
                   </div>
@@ -459,7 +445,7 @@ const TranscriptionHelper: React.FC = () => {
         </div>
       </div>
     </div>
-    );
+  );
 };
 
-    export default TranscriptionHelper;
+export default TranscriptionHelper;

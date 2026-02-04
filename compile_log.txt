@@ -1,0 +1,51 @@
+components/TranscriptionHelper.tsx(167,44): error TS1005: ',' expected.
+components/TranscriptionHelper.tsx(167,71): error TS1005: ',' expected.
+components/TranscriptionHelper.tsx(167,80): error TS1005: ',' expected.
+components/TranscriptionHelper.tsx(167,89): error TS1005: ',' expected.
+components/TranscriptionHelper.tsx(167,90): error TS17008: JSX element 'T' has no corresponding closing tag.
+components/TranscriptionHelper.tsx(167,94): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(168,5): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(169,7): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(170,5): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(171,7): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(171,19): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(173,62): error TS1005: '}' expected.
+components/TranscriptionHelper.tsx(175,7): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(177,5): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(178,3): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(180,34): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(181,23): error TS1005: '}' expected.
+components/TranscriptionHelper.tsx(184,43): error TS1003: Identifier expected.
+components/TranscriptionHelper.tsx(185,9): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(191,11): error TS1005: '}' expected.
+components/TranscriptionHelper.tsx(194,17): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(196,31): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(198,21): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(202,50): error TS1003: Identifier expected.
+components/TranscriptionHelper.tsx(204,87): error TS1005: '}' expected.
+components/TranscriptionHelper.tsx(212,29): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(215,74): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(221,25): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(222,75): error TS1005: '}' expected.
+components/TranscriptionHelper.tsx(225,25): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(226,21): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(235,57): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(237,17): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(239,21): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(240,57): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(241,17): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(243,13): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(244,99): error TS1005: '}' expected.
+components/TranscriptionHelper.tsx(245,13): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(249,9): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(250,27): error TS1005: '}' expected.
+components/TranscriptionHelper.tsx(253,9): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(255,5): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(257,3): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(259,39): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(260,5): error TS1109: Expression expected.
+components/TranscriptionHelper.tsx(261,18): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(262,15): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+components/TranscriptionHelper.tsx(264,3): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(462,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+components/TranscriptionHelper.tsx(465,1): error TS1005: '</' expected.
