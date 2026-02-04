@@ -97,7 +97,13 @@ switch ($method) {
                 $rows = $stmt->fetchAll();
                 logDebug("Total rows to scan: " . count($rows));
 
+                $scanCount = 0;
                 foreach ($rows as $row) {
+                    $scanCount++;
+                    if ($scanCount <= 5) {
+                        logDebug("Scanning stored chapter: [" . $row['chapters'] . "] vs Requested: [" . $chapters . "]");
+                    }
+
                     if (isChapterInRange($chapters, $row['chapters'])) {
                         $highlight = $row;
                         logDebug("Found RANGE match: " . $row['chapters']);
