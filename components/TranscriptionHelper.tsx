@@ -161,70 +161,99 @@ const TranscriptionHelper: React.FC = () => {
     });
   };
 
-  // Chunking Constants
-  const CHUNK_SIZE_MB = 6; // Safe limit for Base64 + HTTP overhead (Hostinger/Gemini limits)
+  // Chunking Constants & Helper
+  const CHUNK_SIZE_MB = 4; // Reduced to 4MB for better stability on shared hosting
   const CHUNK_SIZE_BYTES = CHUNK_SIZE_MB * 1024 * 1024;
+  const MAX_RETRIES = 3;
+
+  const retryOperation = async<T>(operation: () => Promise<T>, retries: number): Promise<T> => {
+    try {
+      return await operation();
+    } catch (error) {
+      if (retries > 0) {
+      // Wait 1s before retry
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    return retryOperation(operation, retries - 1);
+      }
+    throw error;
+    }
+  };
 
   const processQueue = async () => {
-    setLoading(true);
+      setLoading(true);
     const newSessions = [...sessions];
 
     for (let i = 0; i < newSessions.length; i++) {
       if (newSessions[i].status === 'success') continue;
 
-      newSessions[i].status = 'processing';
-      setSessions([...newSessions]);
+    newSessions[i].status = 'processing';
+    setSessions([...newSessions]);
 
-      try {
-        let response = '';
+    try {
+      let response = '';
 
-        if (newSessions[i].type === 'audio' && newSessions[i].blob) {
+    if (newSessions[i].type === 'audio' && newSessions[i].blob) {
           const blob = newSessions[i].blob!;
-
+          
           if (blob.size > CHUNK_SIZE_BYTES) {
-            // LONG AUDIO STRATEGY: Chunking
-            const totalChunks = Math.ceil(blob.size / CHUNK_SIZE_BYTES);
-            let accumulatedText = "";
+             // LONG AUDIO STRATEGY: Chunking with Retries
+             const totalChunks = Math.ceil(blob.size / CHUNK_SIZE_BYTES);
+    let accumulatedText = "";
+    let hasErrors = false;
 
-            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
-              // Update UI with explicit progress
-              newSessions[i].result = `Processando Parte ${chunkIdx + 1} de ${totalChunks}... (Isso pode demorar)`;
-              setSessions([...newSessions]);
+    for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+      // Update UI with explicit progress
+      newSessions[i].result = `Processando Parte ${chunkIdx + 1} de ${totalChunks}...`;
+    setSessions([...newSessions]);
 
-              const start = chunkIdx * CHUNK_SIZE_BYTES;
-              const end = Math.min(start + CHUNK_SIZE_BYTES, blob.size);
-              const chunkBlob = blob.slice(start, end, blob.type);
+    const start = chunkIdx * CHUNK_SIZE_BYTES;
+    const end = Math.min(start + CHUNK_SIZE_BYTES, blob.size);
+    const chunkBlob = blob.slice(start, end, blob.type);
 
-              const base64Chunk = await blobToBase64(chunkBlob);
-              // Partial analysis just extracts text
-              const partialText = await analyzeDiscourse(base64Chunk, true, blob.type, true);
-              accumulatedText += "\n" + partialText;
-            }
+    try {
+                    const base64Chunk = await blobToBase64(chunkBlob);
 
-            // Final Pass: Formatting the accumulated text
-            newSessions[i].result = "Formatando texto final para NotebookLM...";
-            setSessions([...newSessions]);
+                    // Retry logic for each chunk
+                    const partialText = await retryOperation(() =>
+    analyzeDiscourse(base64Chunk, true, blob.type, true),
+    MAX_RETRIES
+    );
 
-            response = await analyzeDiscourse(accumulatedText, false);
+    accumulatedText += "\n" + partialText;
+                } catch (chunkError) {
+      console.error(`Error processing chunk ${chunkIdx + 1}:`, chunkError);
+    accumulatedText += `\n[FALHA NA PARTE ${chunkIdx + 1} - A CONTINUAÇÃO PODE ESTAR INCOMPLETA]`;
+    hasErrors = true;
+                }
+             }
+
+    // Final Pass
+    newSessions[i].result = hasErrors
+    ? "Formatando texto (com algumas falhas de áudio)..."
+    : "Formatando texto final para NotebookLM...";
+    setSessions([...newSessions]);
+
+             // Final formatting retry
+             response = await retryOperation(() => analyzeDiscourse(accumulatedText, false), 2);
 
           } else {
-            // Normal Strategy for short audio
-            const base64 = await blobToBase64(blob);
-            response = await analyzeDiscourse(base64, true, blob.type);
+             // Normal Strategy for short audio with retry
+             const base64 = await blobToBase64(blob);
+             response = await retryOperation(() => analyzeDiscourse(base64, true, blob.type), 2);
           }
 
         } else if (newSessions[i].type === 'text' && newSessions[i].textInput) {
-          response = await analyzeDiscourse(newSessions[i].textInput!, false);
+      response = await retryOperation(() => analyzeDiscourse(newSessions[i].textInput!, false), 2);
         }
 
-        newSessions[i].result = response;
-        newSessions[i].status = 'success';
+    newSessions[i].result = response;
+    newSessions[i].status = 'success';
       } catch (error) {
-        console.error(error);
-        newSessions[i].status = 'error';
-        newSessions[i].result = "Erro ao processar item. Tente dividir o arquivo se for muito grande (+100MB).";
+      console.error(error);
+    newSessions[i].status = 'error';
+    newSessions[i].result = "Erro crítico ao processar. Verifique sua conexão e tente novamente.";
       }
-      setSessions([...newSessions]);
+    setSessions([...newSessions]);
     }
     setLoading(false);
   };
@@ -233,10 +262,10 @@ const TranscriptionHelper: React.FC = () => {
     return sessions
       .filter(s => s.status === 'success' && s.result)
       .map(s => `# Fonte: ${s.fileName}\n\n${s.result}`)
-      .join('\n\n---\n\n');
+    .join('\n\n---\n\n');
   };
 
-  return (
+    return (
     <div className="max-w-5xl mx-auto p-4 space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
         <div className="bg-gradient-to-r from-emerald-600 to-green-600 p-6 text-white">
@@ -284,6 +313,13 @@ const TranscriptionHelper: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">Gravação de Áudio</span>
                       {isRecording && <span className="text-red-500 font-mono font-bold animate-pulse">{formatTime(recordingTime)}</span>}
+                    </div>
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 p-3 rounded-lg flex gap-2">
+                      <HelpCircle className="text-blue-500 flex-shrink-0" size={16} />
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        <strong>Dica Pro:</strong> Para gravações longas (Assembleias), recomendamos usar o <u>gravador nativo do seu celular</u> e enviar o arquivo MP3/M4A aqui. É mais seguro e não consome bateria da tela ligada.
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -423,7 +459,7 @@ const TranscriptionHelper: React.FC = () => {
         </div>
       </div>
     </div>
-  );
+    );
 };
 
-export default TranscriptionHelper;
+    export default TranscriptionHelper;
