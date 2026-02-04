@@ -69,15 +69,23 @@ try {
         "inspect_exists" => file_exists(__DIR__ . '/inspect.php') ? "SIM" : "NÃO"
     ];
 
+    // --- FILA ATRASADA (Para Debug) ---
+    $stmt_delayed = $pdo->prepare("SELECT n.*, u.email 
+                                   FROM scheduled_notifications n
+                                   LEFT JOIN users u ON n.user_id = u.id
+                                   WHERE n.sent = 0 AND n.scheduled_time <= UTC_TIMESTAMP()
+                                   LIMIT 10");
+    $stmt_delayed->execute();
+    $delayed_notifications = $stmt_delayed->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode([
         "status" => "success",
         "v2.1.2_sync" => true,
         "server_times" => $times,
-        "system_logs" => $system_logs,
-        "hostinger_internal_logs" => $hostinger_logs,
+        "system_logs" => [],
+        "delayed_process_queue" => $delayed_notifications, // O que deveria ter ido mas não foi
         "next_to_send" => $next_notifications,
-        "recently_sent" => $sent_notifications,
-        "files_audit" => $files_audit
+        "recently_sent" => $sent_notifications
     ]);
 } catch (Exception $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
