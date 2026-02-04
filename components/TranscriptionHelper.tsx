@@ -161,21 +161,58 @@ const TranscriptionHelper: React.FC = () => {
     });
   };
 
+  // Chunking Constants
+  const CHUNK_SIZE_MB = 6; // Safe limit for Base64 + HTTP overhead (Hostinger/Gemini limits)
+  const CHUNK_SIZE_BYTES = CHUNK_SIZE_MB * 1024 * 1024;
+
   const processQueue = async () => {
     setLoading(true);
     const newSessions = [...sessions];
 
     for (let i = 0; i < newSessions.length; i++) {
-      if (newSessions[i].status === 'success') continue; // Pula os já feitos
+      if (newSessions[i].status === 'success') continue;
 
       newSessions[i].status = 'processing';
-      setSessions([...newSessions]); // Atualiza UI
+      setSessions([...newSessions]);
 
       try {
         let response = '';
+
         if (newSessions[i].type === 'audio' && newSessions[i].blob) {
-          const base64 = await blobToBase64(newSessions[i].blob!);
-          response = await analyzeDiscourse(base64, true, newSessions[i].blob!.type);
+          const blob = newSessions[i].blob!;
+
+          if (blob.size > CHUNK_SIZE_BYTES) {
+            // LONG AUDIO STRATEGY: Chunking
+            const totalChunks = Math.ceil(blob.size / CHUNK_SIZE_BYTES);
+            let accumulatedText = "";
+
+            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+              // Update UI with explicit progress
+              newSessions[i].result = `Processando Parte ${chunkIdx + 1} de ${totalChunks}... (Isso pode demorar)`;
+              setSessions([...newSessions]);
+
+              const start = chunkIdx * CHUNK_SIZE_BYTES;
+              const end = Math.min(start + CHUNK_SIZE_BYTES, blob.size);
+              const chunkBlob = blob.slice(start, end, blob.type);
+
+              const base64Chunk = await blobToBase64(chunkBlob);
+              // Partial analysis just extracts text
+              const partialText = await analyzeDiscourse(base64Chunk, true, blob.type, true);
+              accumulatedText += "\n" + partialText;
+            }
+
+            // Final Pass: Formatting the accumulated text
+            newSessions[i].result = "Formatando texto final para NotebookLM...";
+            setSessions([...newSessions]);
+
+            response = await analyzeDiscourse(accumulatedText, false);
+
+          } else {
+            // Normal Strategy for short audio
+            const base64 = await blobToBase64(blob);
+            response = await analyzeDiscourse(base64, true, blob.type);
+          }
+
         } else if (newSessions[i].type === 'text' && newSessions[i].textInput) {
           response = await analyzeDiscourse(newSessions[i].textInput!, false);
         }
@@ -185,7 +222,7 @@ const TranscriptionHelper: React.FC = () => {
       } catch (error) {
         console.error(error);
         newSessions[i].status = 'error';
-        newSessions[i].result = "Erro ao processar item.";
+        newSessions[i].result = "Erro ao processar item. Tente dividir o arquivo se for muito grande (+100MB).";
       }
       setSessions([...newSessions]);
     }

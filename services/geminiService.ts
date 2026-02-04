@@ -364,9 +364,18 @@ export const generateCommentSuggestion = async (
 export const analyzeDiscourse = async (
   input: string,
   isAudio: boolean = false,
-  mimeType: string = 'audio/mp3'
+  mimeType: string = 'audio/mp3',
+  isPartial: boolean = false
 ): Promise<string> => {
-  const systemInstruction = `
+  const systemInstruction = isPartial
+    ? `Você é um transcritor especialista.
+       OBJETIVO: Transcrever e limpar o áudio fornecido, transformando-o em um texto de estudo fluido e direto.
+       REGRAS:
+       1. Não use introduções como "Aqui está a transcrição".
+       2. Use "Nós" (primeira pessoa do plural) para tom de instrução.
+       3. Cite referências bíblicas em **negrito** se aparecerem.
+       4. Apenas o conteúdo, sem formatação de títulos ou metadados.`
+    : `
     Você é um assistente especializado em transcrever e organizar discursos bíblicos para estudo no NotebookLM.
     
     DIRETRIZES DE TOM E POSTURA (CRÍTICO - SEGURANÇA DO CONTEÚDO):
@@ -419,7 +428,9 @@ export const analyzeDiscourse = async (
             }
           },
           {
-            text: "Gere o Material de Ensino Definitivo deste discurso seguindo rigorosamente as diretrizes de autoridade e destaque de versículos."
+            text: isPartial
+              ? "Transcreva este segmento de áudio em texto fluido de estudo. Apenas o texto."
+              : "Gere o Material de Ensino Definitivo deste discurso seguindo rigorosamente as diretrizes de autoridade e destaque de versículos."
           }
         ]
       };
